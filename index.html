@@ -1,0 +1,985 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>XOLƎRIƆ</title>
+    <meta name="theme-color" content="#000000">
+    <link rel="manifest" id="manifest-link">
+    <style>
+        :root {
+            --bg-color: #000000;
+            --text-main: rgba(255, 255, 255, 0.9);
+            --text-muted: rgba(255, 255, 255, 0.4);
+            --border-light: rgba(255, 255, 255, 0.08);
+            --surface-hover: rgba(255, 255, 255, 0.05);
+            --surface-active: rgba(255, 255, 255, 0.15);
+            --accent: #ffffff;
+            --error: rgba(255, 50, 50, 0.6);
+            --transition-smooth: all 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            width: 100vw;
+            height: 100dvh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            position: fixed;
+            font-weight: 300;
+        }
+
+        /* --- Minimalist Login Screen --- */
+        #login-screen {
+            position: absolute;
+            inset: 0;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            background: var(--bg-color);
+            z-index: 200;
+            transition: opacity 0.8s ease, visibility 0.8s;
+        }
+
+        #login-screen h1 {
+            font-size: 2.5rem;
+            font-weight: 200;
+            letter-spacing: 8px;
+            margin-bottom: 50px;
+            color: var(--text-main);
+            opacity: 0;
+            animation: fadeIn 1.5s ease forwards 0.2s;
+        }
+
+        .input-wrapper {
+            width: 80%;
+            max-width: 300px;
+            position: relative;
+            opacity: 0;
+            animation: fadeIn 1.5s ease forwards 0.5s;
+        }
+
+        input {
+            width: 100%;
+            padding: 15px 0;
+            background: transparent;
+            border: none;
+            border-bottom: 1px solid var(--border-light);
+            color: var(--text-main);
+            font-size: 1.2rem;
+            font-weight: 300;
+            text-align: center;
+            outline: none;
+            transition: var(--transition-smooth);
+            letter-spacing: 2px;
+        }
+
+        input::placeholder {
+            color: var(--text-muted);
+            font-weight: 200;
+        }
+
+        input:focus {
+            border-bottom-color: var(--text-main);
+        }
+
+        .btn-clean {
+            background: transparent;
+            color: var(--text-main);
+            border: 1px solid var(--border-light);
+            padding: 12px 40px;
+            border-radius: 4px;
+            font-size: 0.9rem;
+            letter-spacing: 3px;
+            text-transform: uppercase;
+            cursor: pointer;
+            transition: var(--transition-smooth);
+            margin-top: 40px;
+            opacity: 0;
+            animation: fadeIn 1.5s ease forwards 0.8s;
+        }
+
+        .btn-clean:hover, .btn-clean:active {
+            background: var(--surface-active);
+            border-color: var(--text-main);
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* --- Game UI Layout --- */
+        #game-screen {
+            display: none;
+            width: 100%;
+            height: 100%;
+            flex-direction: column;
+            opacity: 0;
+            transition: opacity 1s ease;
+        }
+
+        /* Header */
+        #header-panel {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px 30px;
+            height: 80px;
+            flex-shrink: 0;
+            z-index: 10;
+        }
+
+        .stat-group {
+            display: flex;
+            gap: 30px;
+        }
+
+        .stat-item {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .stat-label {
+            font-size: 0.65rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            margin-bottom: 4px;
+        }
+
+        .stat-value {
+            font-size: 1.4rem;
+            font-weight: 200;
+            letter-spacing: 1px;
+        }
+
+        /* Board Area */
+        #board-wrapper {
+            flex: 1;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+            padding: 10px;
+        }
+
+        #board {
+            display: grid;
+            gap: 4px;
+            position: relative;
+            z-index: 2;
+        }
+
+        .tile {
+            background: transparent;
+            border: 1px solid var(--border-light);
+            border-radius: 4px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            transition: var(--transition-smooth);
+            position: relative;
+            backdrop-filter: blur(4px);
+            -webkit-backdrop-filter: blur(4px);
+        }
+
+        .tile:hover {
+            background: var(--surface-hover);
+        }
+
+        .tile:active {
+            transform: scale(0.92);
+        }
+
+        .tile.selected {
+            background: var(--surface-active);
+            border-color: var(--text-main);
+            transform: scale(1.05);
+            z-index: 5;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.5);
+        }
+
+        .tile.error {
+            background: var(--error);
+            border-color: transparent;
+            animation: shake 0.4s cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
+        }
+
+        .tile.hidden {
+            opacity: 0;
+            transform: scale(0.5);
+            pointer-events: none;
+        }
+
+        @keyframes shake {
+            10%, 90% { transform: translateX(-2px); }
+            20%, 80% { transform: translateX(2px); }
+            30%, 50%, 70% { transform: translateX(-4px); }
+            40%, 60% { transform: translateX(4px); }
+        }
+
+        #svg-layer {
+            position: absolute;
+            inset: 0;
+            pointer-events: none;
+            z-index: 100;
+        }
+
+        .path-line {
+            stroke-dasharray: 1000;
+            stroke-dashoffset: 1000;
+            animation: drawPath 0.4s ease-out forwards;
+        }
+
+        @keyframes drawPath {
+            to { stroke-dashoffset: 0; }
+        }
+
+        /* Footer */
+        #footer-panel {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px 30px;
+            height: 80px;
+            flex-shrink: 0;
+            z-index: 10;
+        }
+
+        .player-info {
+            display: flex;
+            flex-direction: column;
+        }
+        
+        #player-name { 
+            font-size: 1rem;
+            font-weight: 300;
+            letter-spacing: 1px;
+        }
+        
+        #time-display { 
+            font-size: 0.7rem; 
+            color: var(--text-muted); 
+            letter-spacing: 2px;
+            margin-top: 4px;
+        }
+
+        .controls {
+            display: flex;
+            gap: 15px;
+        }
+
+        .btn-icon {
+            background: transparent;
+            border: 1px solid var(--border-light);
+            color: var(--text-main);
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            transition: var(--transition-smooth);
+            font-size: 1.2rem;
+        }
+
+        .btn-icon:hover {
+            background: var(--surface-active);
+            border-color: var(--text-main);
+        }
+
+        #install-btn {
+            display: none;
+        }
+        
+        /* O'yin tugashi ekrani */
+        #overlay-screen {
+            position: absolute;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(10px);
+            z-index: 300;
+            display: none;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            opacity: 0;
+            transition: opacity 0.5s ease;
+        }
+        
+        #overlay-screen h2 {
+            font-size: 2rem;
+            font-weight: 200;
+            letter-spacing: 5px;
+            margin-bottom: 20px;
+        }
+        
+        .overlay-stats {
+            color: var(--text-muted);
+            margin-bottom: 40px;
+            text-align: center;
+            line-height: 1.8;
+            font-size: 1.1rem;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="login-screen">
+        <h1>XOLERIC</h1>
+        <div class="input-wrapper">
+            <input type="text" id="player-input" placeholder="Identifikatsiya..." autocomplete="off" spellcheck="false">
+        </div>
+        <button class="btn-clean" onclick="initSystem()">Tizimga kirish</button>
+    </div>
+
+    <div id="game-screen">
+        <div id="header-panel">
+            <div class="stat-group">
+                <div class="stat-item">
+                    <span class="stat-label">Bosqich</span>
+                    <span class="stat-value" id="level-display">01</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">Ochko</span>
+                    <span class="stat-value" id="score-display">0000</span>
+                </div>
+            </div>
+            <div class="stat-item" style="align-items: flex-end;">
+                <span class="stat-label">Aralashtirish</span>
+                <span class="stat-value" id="shuffle-display">03</span>
+            </div>
+        </div>
+
+        <div id="board-wrapper">
+            <div id="board"></div>
+            <svg id="svg-layer"></svg>
+        </div>
+
+        <div id="footer-panel">
+            <div class="player-info">
+                <span id="player-name">User</span>
+                <span id="time-display">00:00:00</span>
+            </div>
+            <div class="controls">
+                <button class="btn-icon" onclick="shuffleBoard()" title="Aralashtirish">⟳</button>
+                <button class="btn-icon" id="install-btn" title="O'rnatish">↓</button>
+            </div>
+        </div>
+    </div>
+    
+    <div id="overlay-screen">
+        <h2 id="overlay-title">TIZIM YAKUNLANDI</h2>
+        <div class="overlay-stats" id="overlay-desc">
+            Siz barcha bosqichlardan o'tdingiz.<br>
+            Yakuniy ochko: <span id="final-score" style="color: white;">0</span>
+        </div>
+        <button class="btn-clean" onclick="resetGame()">Qayta boshlash</button>
+    </div>
+
+    <script>
+        // --- Minimalist Audio Engine ---
+        let audioCtx;
+        function initAudio() {
+            if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+        }
+
+        function playTone(freq, type, duration, vol = 0.05) {
+            if (!audioCtx) return;
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.type = type; 
+            osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+            
+            // Silliq ovoz uchun envelop
+            gain.gain.setValueAtTime(0, audioCtx.currentTime);
+            gain.gain.linearRampToValueAtTime(vol, audioCtx.currentTime + 0.02);
+            gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + duration);
+            
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            osc.start();
+            osc.stop(audioCtx.currentTime + duration);
+        }
+
+        function playSound(type) {
+            try {
+                switch(type) {
+                    case 'select': playTone(600, 'sine', 0.15, 0.03); break;
+                    case 'match': 
+                        playTone(400, 'sine', 0.1, 0.04);
+                        setTimeout(() => playTone(800, 'sine', 0.2, 0.04), 100);
+                        break;
+                    case 'error': playTone(200, 'triangle', 0.2, 0.05); break;
+                    case 'level':
+                        [300, 400, 500, 600].forEach((f, i) => setTimeout(() => playTone(f, 'sine', 0.15, 0.04), i * 150));
+                        break;
+                    case 'shuffle': playTone(300, 'sine', 0.3, 0.03); break;
+                }
+            } catch(e){}
+        }
+
+        // --- PWA Setup Minimal ---
+        const manifest = {
+            name: "Xoleric PRO",
+            short_name: "Xoleric",
+            display: "fullscreen",
+            background_color: "#000000",
+            theme_color: "#000000",
+            icons: [{
+                src: "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj48cmVjdCB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgZmlsbD0iIzAwMCIvPjx0ZXh0IHg9IjUwIiB5PSI2NCIgZm9udC1zaXplPSI1MCIgZm9udC1mYW1pbHk9InNhbnMtc2VyaWYiIGZvbnQtd2VpZ2h0PSIyMDAiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGZpbGw9IiNmZmYiPlg8L3RleHQ+PC9zdmc+",
+                sizes: "192x192",
+                type: "image/svg+xml"
+            }]
+        };
+        document.getElementById('manifest-link').href = URL.createObjectURL(new Blob([JSON.stringify(manifest)], {type: 'application/json'}));
+        
+        const sw = URL.createObjectURL(new Blob([`self.addEventListener('fetch', e => {});`], {type: 'application/javascript'}));
+        if ('serviceWorker' in navigator) navigator.serviceWorker.register(sw);
+
+        let deferredPrompt;
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            deferredPrompt = e;
+            document.getElementById('install-btn').style.display = 'flex';
+        });
+
+        document.getElementById('install-btn').addEventListener('click', async () => {
+            if (deferredPrompt) {
+                deferredPrompt.prompt();
+                const { outcome } = await deferredPrompt.userChoice;
+                if (outcome === 'accepted') document.getElementById('install-btn').style.display = 'none';
+                deferredPrompt = null;
+            }
+        });
+
+        // --- Core Game Data ---
+        const emojis = [
+        
+    "😀", "😃", "😄", "😁", "😆", "😅", "😂", "🤣", "😊", "😇",
+    "🙂", "🙃", "😉", "😌", "😍", "🥰", "😘", "😗", "😙", "😚",
+    "😋", "😛", "😝", "😜", "🤪", "🤨", "🧐", "🤓", "😎", "🥸",
+    "🤩", "🥳", "😏", "😒", "😞", "😔", "😟", "😕", "🙁", "☹️",
+    "😣", "😖", "😫", "😩", "🥺", "😢", "😭", "😤", "😠", "😡",
+    "🤬", "🤯", "😳", "🥵", "🥶", "😱", "😨", "😰", "😥", "😓",
+    "🤗", "🤔", "🤭", "🤫", "🤥", "😶", "😐", "😑", "😬", "🙄",
+    "😯", "😦", "😧", "😮", "😲", "🥱", "😴", "🤤", "😪", "😵",
+    "🤐", "🥴", "🤢", "🤮", "🤧", "😷", "🤒", "🤕", "🤑", "🤠",
+    
+    // Hayvonlar (50 ta)
+    "🐶", "🐱", "🐭", "🐹", "🐰", "🦊", "🐻", "🐼", "🐻‍❄️", "🐨",
+    "🐯", "🦁", "🐮", "🐷", "🐸", "🐒", "🐔", "🐧", "🐦", "🐤",
+    "🐣", "🐥", "🦆", "🦅", "🦉", "🦇", "🐺", "🐗", "🐴", "🦄",
+    "🐝", "🐛", "🦋", "🐌", "🐞", "🐜", "🪰", "🪲", "🪳", "🦟",
+    "🦗", "🕷️", "🕸️", "🦂", "🐢", "🐍", "🦎", "🐙", "🦑", "🦐",
+    "🦞", "🦀", "🐡", "🐠", "🐟", "🐬", "🐳", "🐋", "🦈", "🐊",
+    "🐅", "🐆", "🦓", "🦍", "🦧", "🦣", "🐘", "🦛", "🦏", "🐪",
+    "🐫", "🦒", "🦘", "🦬", "🐃", "🐂", "🐄", "🐎", "🐖", "🐏",
+    "🐑", "🦙", "🐐", "🦌", "🐕", "🐩", "🦮", "🐕‍🦺", "🐈", "🐈⬛",
+    
+    // Tabiat (40 ta)
+    "🌵", "🎄", "🌲", "🌳", "🌴", "🪵", "🌱", "🌿", "☘️", "🍀",
+    "🎍", "🪴", "🎋", "🍃", "🍂", "🍁", "🍄", "🐚", "🪸", "🌾",
+    "💐", "🌷", "🌹", "🥀", "🌺", "🌸", "🌼", "🌻", "🌞", "🌝",
+    "🌛", "🌜", "🌚", "🌕", "🌖", "🌗", "🌘", "🌑", "🌒", "🌓",
+    "🌔", "🌙", "🌎", "🌍", "🌏", "🪐", "💫", "⭐", "🌟", "✨",
+    "⚡", "🔥", "💥", "💨", "💧", "💦", "🫧", "☄️", "🌊", "🌀",
+    
+    // Ovqatlar (60 ta)
+    "🍏", "🍎", "🍐", "🍊", "🍋", "🍌", "🍉", "🍇", "🍓", "🫐",
+    "🍈", "🍒", "🍑", "🥭", "🍍", "🥥", "🥝", "🍅", "🍆", "🥑",
+    "🥦", "🥬", "🥒", "🌶️", "🫑", "🌽", "🥕", "🧄", "🧅", "🥔",
+    "🍠", "🥐", "🥯", "🍞", "🥖", "🥨", "🧀", "🥚", "🍳", "🧈",
+    "🥞", "🧇", "🥓", "🥩", "🍗", "🍖", "🦴", "🌭", "🍔", "🍟",
+    "🍕", "🫓", "🥪", "🥙", "🧆", "🌮", "🌯", "🫔", "🥗", "🥘",
+    "🫕", "🥫", "🍝", "🍜", "🍲", "🍛", "🍣", "🍱", "🥟", "🦪",
+    "🍤", "🍙", "🍚", "🍘", "🍥", "🥠", "🥮", "🍢", "🍡", "🍧",
+    "🍨", "🍦", "🥧", "🧁", "🍰", "🎂", "🍮", "🍭", "🍬", "🍫",
+    "🍿", "🍩", "🍪", "🌰", "🥜", "🍯", "🥛", "🍼", "🫗", "☕",
+    
+    // Sport (30 ta)
+    "⚽", "🏀", "🏈", "⚾", "🥎", "🎾", "🏐", "🏉", "🥏", "🎳",
+    "🏏", "🏑", "🏒", "🥍", "🏓", "🏸", "🥊", "🥋", "🥅", "⛳",
+    "🏹", "🎣", "🤿", "🥌", "🛷", "🛼", "🛹", "🪂", "🏋️", "🤼",
+    "🤸", "🤺", "🤾", "🏌️", "🏇", "🧘", "🏄", "🏊", "🤽", "🚣",
+    
+    // Transport (40 ta)
+    "🚗", "🚕", "🚙", "🚌", "🚎", "🏎️", "🚓", "🚑", "🚒", "🚐",
+    "🛻", "🚚", "🚛", "🚜", "🦯", "🦽", "🦼", "🛴", "🚲", "🛵",
+    "🏍️", "🛺", "🚨", "🚔", "🚍", "🚘", "🚖", "🚡", "🚠", "🚟",
+    "🚃", "🚋", "🚞", "🚝", "🚄", "🚅", "🚈", "🚂", "🚆", "🚇",
+    "🚊", "🚉", "✈️", "🛫", "🛬", "🛩️", "💺", "🛰️", "🚀", "🛸",
+    
+    // Bayroqlar (50 ta)
+    "🏁", "🚩", "🎌", "🏴", "🏳️", "🏳️‍🌈", "🏳️‍⚧️", "🏴‍☠️", 
+    "🇺🇸", "🇬🇧", "🇨🇦", "🇦🇺", "🇯🇵", "🇰🇷", "🇨🇳", "🇮🇳", 
+    "🇩🇪", "🇫🇷", "🇮🇹", "🇪🇸", "🇵🇹", "🇷🇺", "🇧🇷", "🇲🇽",
+    "🇿🇦", "🇳🇬", "🇪🇬", "🇸🇦", "🇦🇪", "🇹🇷", "🇬🇷", "🇳🇱",
+    "🇧🇪", "🇨🇭", "🇸🇪", "🇳🇴", "🇩🇰", "🇫🇮", "🇮🇸", "🇮🇪",
+    
+    // Belgilar (60 ta)
+    "❤️", "🧡", "💛", "💚", "💙", "💜", "🖤", "🤍", "🤎", "💔",
+    "❣️", "💕", "💞", "💓", "💗", "💖", "💘", "💝", "💟", "☮️",
+    "✝️", "☪️", "🕉️", "☸️", "✡️", "🔯", "🕎", "☯️", "☦️", "🛐",
+    "⛎", "♈", "♉", "♊", "♋", "♌", "♍", "♎", "♏", "♐",
+    "♑", "♒", "♓", "🆔", "⚛️", "🉑", "☢️", "☣️", "📴", "📳",
+    "🈶", "🈚", "🈸", "🈺", "🈷️", "✴️", "🆚", "💮", "🉐", "㊙️",
+    
+    // Narsalar (100 ta)
+    "⌚", "📱", "📲", "💻", "⌨️", "🖥️", "🖨️", "🖱️", "🖲️", "🕹️",
+    "🗜️", "💽", "💾", "💿", "📀", "📼", "📷", "📸", "📹", "🎥",
+    "📽️", "🎞️", "📞", "☎️", "📟", "📠", "📺", "📻", "🎙️", "🎚️",
+    "🎛️", "🧭", "⏱️", "⏲️", "⏰", "🕰️", "⌛", "⏳", "📡", "🔋",
+    "🪫", "💡", "🔦", "🕯️", "🪔", "🧯", "🛢️", "💸", "💵", "💴",
+    "💶", "💷", "💰", "💳", "💎", "⚖️", "🪤", "🧰", "🔧", "🔨",
+    "⚒️", "🛠️", "⛏️", "🔩", "⚙️", "🧱", "⛓️", "🪓", "🔪", "🗡️",
+    "⚔️", "🛡️", "🚬", "⚰️", "🪦", "⚱️", "🏺", "🔮", "📿", "🧿",
+    "💈", "⚗️", "🔭", "🔬", "🕳️", "🩻", "🩹", "🩺", "💊", "💉",
+    
+    // Kiyimlar (30 ta)
+    "🧥", "👚", "👕", "👖", "🩲", "🩳", "👔", "👗", "👘", "🥻",
+    "🩱", "🩴", "🥿", "👠", "👡", "👢", "👞", "👟", "🥾", "🧦",
+    "🧤", "🧣", "🧢", "🎩", "👒", "🎓", "⛑️", "👑", "💍", "👝",
+    
+    // Musiqa (20 ta)
+    "🎵", "🎶", "🎼", "🎤", "🎧", "🎸", "🎷", "🎺", "🎻", "🪕",
+    "🥁", "🪘", "🎹", "🪗", "🎬", "🎨", "🎭", "🎪", "🎟️", "🎫",
+    
+    // Qo'shimcha zamonaviy (200+ ta)
+    "🥹", "🫠", "🫢", "🫣", "🫡", "🫥", "🫤", "🥶", "🥵", "🫨",
+    "🫱", "🫲", "🫳", "🫴", "🫵", "🫶", "🫦", "🫅", "🫄", "🫃",
+    "🧌", "🪸", "🪷", "🪻", "🫘", "🫗", "🫙", "🛝", "🛞", "🛟",
+    "🪿", "🪼", "🪺", "🪹", "🪈", "🪇", "🪉", "🪊", "🪋", "🪏",
+    "🪑", "🪒", "🪓", "🪔", "🪕", "🪖", "🪗", "🪘", "🪙", "🪚",
+    "🪛", "🪜", "🪝", "🪞", "🪟", "🪠", "🪡", "🪢", "🪣", "🪤",
+    "🪥", "🪦", "🪧", "🪨", "🪩", "🪪", "🪫", "🪬", "🪭", "🪮",
+    
+    // Hayvonlar qo'shimcha
+    "🦫", "🦬", "🦣", "🦤", "🦦", "🦨", "🦩", "🦪", "🦭", "🦮",
+    "🦯", "🦰", "🦱", "🦲", "🦳", "🦴", "🦵", "🦶", "🦷", "🦸",
+    "🦹", "🦺", "🦻", "🦼", "🦽", "🦾", "🦿", "🧀", "🧁", "🧂",
+    
+    // Maxsus belgilar
+    "🌀", "🌁", "🌂", "🌃", "🌄", "🌅", "🌆", "🌇", "🌈", "🌉",
+    "🌊", "🌋", "🌌", "🌍", "🌎", "🌏", "🌐", "🌑", "🌒", "🌓",
+    "🌔", "🌕", "🌖", "🌗", "🌘", "🌙", "🌚", "🌛", "🌜", "🌝",
+    "🌞", "🌟", "🌠", "🌡️", "🌤️", "🌥️", "🌦️", "🌧️", "🌨️", "🌩️",
+    "🌪️", "🌫️", "🌬️", "🌭", "🌮", "🌯", "🌰", "🌱", "🌲", "🌳",
+    "🌴", "🌵", "🌶️", "🌷", "🌸", "🌹", "🌺", "🌻", "🌼", "🌽",
+    "🌾", "🌿", "🍀", "🍁", "🍂", "🍃", "🍄", "🍅", "🍆", "🍇",
+    
+    // Ofis buyumlari
+    "📂", "📃", "📄", "📑", "📊", "📋", "📌", "📍", "📎", "🖇️",
+    "📏", "📐", "📕", "📗", "📘", "📙", "📚", "📖", "🔖", "🧷",
+    "🔗", "📰", "📈", "📉", "📋", "📆", "📅", "🗑️", "🔒", "🔓",
+    
+    // Yuzlar (barcha variantlar)
+    "😀", "😃", "😄", "😁", "😆", "😅", "😂", "🤣", "😊", "😇",
+    "🙂", "🙃", "😉", "😌", "😍", "🥰", "😘", "😗", "😙", "😚",
+    "😋", "😛", "😝", "😜", "🤪", "🤨", "🧐", "🤓", "😎", "🥸",
+    "🤩", "🥳", "😏", "😒", "😞", "😔", "😟", "😕", "🙁", "☹️",
+    "😣", "😖", "😫", "😩", "🥺", "😢", "😭", "😤", "😠", "😡",
+    "🤬", "🤯", "😳", "🥵", "🥶", "😱", "😨", "😰", "😥", "😓",
+    
+    // Qo'l belgilari
+    "👋", "🤚", "🖐️", "✋", "🖖", "🫱", "🫲", "🫳", "🫴", "👌",
+    "🤌", "🤏", "✌️", "🤞", "🫰", "🤟", "🤘", "🤙", "🫵", "👈",
+    "👉", "👆", "🖕", "👇", "☝️", "🫶", "👍", "👎", "✊", "👊",
+    "🤛", "🤜", "👏", "🙌", "🫢", "🫣", "🫡", "🫤", "🫥", "👐",
+    "🤲", "🤝", "🙏", "✍️", "💅", "🤳", "💪", "🦾", "🦵", "🦶",
+    
+    // Odamlar va kasblar
+    "👶", "🧒", "👦", "👧", "🧑", "👨", "👩", "🧔", "🧔‍♂️", "🧔‍♀️",
+    "👨‍🦰", "👨‍🦱", "👨‍🦳", "👨‍🦲", "👩‍🦰", "👩‍🦱", "👩‍🦳", "👩‍🦲", "🧓", "👴",
+    "👵", "🙍", "🙍‍♂️", "🙍‍♀️", "🙎", "🙎‍♂️", "🙎‍♀️", "🙅", "🙅‍♂️", "🙅‍♀️",
+    "🙆", "🙆‍♂️", "🙆‍♀️", "💁", "💁‍♂️", "💁‍♀️", "🙋", "🙋‍♂️", "🙋‍♀️", "🧏",
+    
+    // Sportchilar
+    "🤦", "🤦‍♂️", "🤦‍♀️", "🤷", "🤷‍♂️", "🤷‍♀️", "👨‍⚕️", "👩‍⚕️", "👨‍🎓", "👩‍🎓",
+    "👨‍🏫", "👩‍🏫", "👨‍⚖️", "👩‍⚖️", "👨‍🌾", "👩‍🌾", "👨‍🍳", "👩‍🍳", "👨‍🔧", "👩‍🔧",
+    "👨‍🏭", "👩‍🏭", "👨‍💼", "👩‍💼", "👨‍🔬", "👩‍🔬", "👨‍💻", "👩‍💻", "👨‍🎤", "👩‍🎤",
+    "👨‍🎨", "👩‍🎨", "👨‍✈️", "👩‍✈️", "👨‍🚀", "👩‍🚀", "👨‍🚒", "👩‍🚒", "👮", "👮‍♂️",
+    
+    // Hayvonlar va tabiat
+    "🦊", "🐺", "🦝", "🐱", "🐈", "🐈⬛", "🦁", "🐯", "🐅", "🐆",
+    "🐴", "🐎", "🦄", "🦓", "🦌", "🦬", "🐮", "🐂", "🐃", "🐄",
+    "🐷", "🐖", "🐗", "🐽", "🐏", "🐑", "🐐", "🐪", "🐫", "🦙",
+    "🦒", "🐘", "🦣", "🦏", "🦛", "🐭", "🐁", "🐀", "🐹", "🐰",
+    "🐇", "🐿️", "🦫", "🦔", "🦇", "🐻", "🐻‍❄️", "🐨", "🐼", "🦥",
+    "🦦", "🦨", "🦘", "🦡", "🐾", "🦃", "🐔", "🐓", "🐣", "🐤",
+    "🐥", "🐦", "🐧", "🕊️", "🦅", "🦆", "🦢", "🦉", "🦤", "🪶",
+    "🦩", "🦚", "🦜", "🐸", "🐊", "🐢", "🦎", "🐍", "🐲", "🐉",
+    "🦕", "🦖", "🐳", "🐋", "🐬", "🦭", "🐟", "🐠", "🐡", "🦈",
+    "🐙", "🐚", "🪸", "🐌", "🦋", "🐛", "🐜", "🐝", "🪲", "🐞",
+    
+    // O'simliklar
+    "🌹", "🥀", "🌺", "🌸", "🌼", "🌻", "🌞", "🌝", "🌛", "🌜",
+    "🌚", "🌕", "🌖", "🌗", "🌘", "🌑", "🌒", "🌓", "🌔", "🌙",
+    "🌎", "🌍", "🌏", "🪐", "💫", "⭐", "🌟", "✨", "⚡", "☄️",
+    "💥", "🔥", "🌈", "☀️", "🌤️", "⛅", "🌥️", "☁️", "🌦️", "🌧️",
+    
+    // Ovqat va ichimlik
+    "🥑", "🍆", "🥒", "🌶️", "🫑", "🌽", "🥕", "🧄", "🧅", "🥔",
+    "🍠", "🥐", "🥯", "🍞", "🥖", "🥨", "🧀", "🥚", "🍳", "🧈",
+    "🥞", "🧇", "🥓", "🥩", "🍗", "🍖", "🦴", "🌭", "🍔", "🍟",
+    "🍕", "🫓", "🥪", "🥙", "🧆", "🌮", "🌯", "🫔", "🥗", "🥘",
+    
+    // Ichimliklar
+    "🧃", "🧉", "🧊", "🥤", "🧋", "🫖", "☕", "🍵", "🍶", "🍾",
+    "🍷", "🍸", "🍹", "🍺", "🍻", "🥂", "🥃", "🫗", "🥛", "🍼",
+    
+    // Sport va o'yinlar
+    "⚽", "🏀", "🏈", "⚾", "🥎", "🎾", "🏐", "🏉", "🥏", "🎳",
+    "🏏", "🏑", "🏒", "🥍", "🏓", "🏸", "🥊", "🥋", "🥅", "⛳",
+    "🏹", "🎣", "🤿", "🥌", "🛷", "🛼", "🛹", "🪂", "🏋️", "🤼",
+    
+    // San'at va musiqa
+    "🎭", "🩰", "🪩", "💃", "🕺", "🕴️", "👯", "🧖", "🧗", "🤺",
+    "🏇", "⛷️", "🏂", "🏌️", "🏄", "🚣", "🏊", "⛹️", "🏋️", "🚴",
+    "🚵", "🤸", "🤼", "🤽", "🤾", "🤹", "🧘", "🛀", "🛌", "👼"
+]; // Sof vizual belgilar, emojilar o'rniga minimalist shakllar ishlatsak bo'ladi. Agar rangli emoji xohlasangiz avvalgi ro'yxatni qo'yish mumkin, lekin shaffoflik uchun qora-oq belgilar ideal.
+
+        let state = {
+            level: 1,
+            score: 0,
+            shuffles: 3,
+            board: [],
+            rows: 0, cols: 0,
+            tileSize: 0,
+            selected: null,
+            pairs: 0
+        };
+
+        const levelConfig = [
+            { r: 4, c: 6 }, { r: 6, c: 6 }, { r: 6, c: 8 }, { r: 8, c: 8 }, { r: 8, c: 10 },
+            { r: 10, c: 10 }, { r: 10, c: 12 }, { r: 12, c: 12 }, { r: 12, c: 14 }, { r: 14, c: 14 }
+        ];
+
+        // --- Initialization ---
+        window.onload = () => {
+            const savedName = localStorage.getItem('xoleric_user');
+            if(savedName) document.getElementById('player-input').value = savedName;
+            
+            setInterval(() => {
+                document.getElementById('time-display').innerText = new Date().toLocaleTimeString('uz-UZ', { hour12: false });
+            }, 1000);
+        };
+
+        function initSystem() {
+            const name = document.getElementById('player-input').value.trim() || "Anonim";
+            localStorage.setItem('xoleric_user', name);
+            document.getElementById('player-name').innerText = name.toUpperCase();
+
+            initAudio();
+            
+            try {
+                if (document.documentElement.requestFullscreen) {
+                    document.documentElement.requestFullscreen().catch(()=>{});
+                }
+            } catch(e) {}
+
+            const login = document.getElementById('login-screen');
+            const game = document.getElementById('game-screen');
+            
+            login.style.opacity = '0';
+            setTimeout(() => {
+                login.style.display = 'none';
+                game.style.display = 'flex';
+                setTimeout(() => game.style.opacity = '1', 50);
+                startLevel(1);
+            }, 800);
+        }
+
+        function formatNum(num) {
+            return num.toString().padStart(2, '0');
+        }
+
+        function formatScore(num) {
+            return num.toString().padStart(4, '0');
+        }
+
+        function startLevel(lvl) {
+            if (lvl > levelConfig.length) {
+                showOverlay();
+                return;
+            }
+            
+            state.level = lvl;
+            document.getElementById('level-display').innerText = formatNum(state.level);
+            document.getElementById('score-display').innerText = formatScore(state.score);
+            document.getElementById('shuffle-display').innerText = formatNum(state.shuffles);
+            
+            state.rows = levelConfig[lvl-1].r;
+            state.cols = levelConfig[lvl-1].c;
+            
+            buildGrid();
+            render();
+        }
+
+        function buildGrid() {
+            const total = state.rows * state.cols;
+            state.pairs = total / 2;
+            let items = [];
+            
+            let pool = [...emojis].sort(() => Math.random() - 0.5);
+            // Agar belgilar yetmasa, ko'paytiramiz
+            while(pool.length < state.pairs) pool = pool.concat(emojis);
+            
+            let needed = pool.slice(0, state.pairs);
+            
+            for (let i = 0; i < state.pairs; i++) {
+                items.push(needed[i], needed[i]); 
+            }
+            items.sort(() => Math.random() - 0.5); 
+            
+            state.board = Array(state.rows + 2).fill().map(() => Array(state.cols + 2).fill(0));
+            
+            let idx = 0;
+            for (let r = 1; r <= state.rows; r++) {
+                for (let c = 1; c <= state.cols; c++) {
+                    state.board[r][c] = items[idx++];
+                }
+            }
+        }
+
+        function render() {
+            const wrapper = document.getElementById('board-wrapper');
+            const boardEl = document.getElementById('board');
+            
+            const maxW = wrapper.clientWidth - 20;
+            const maxH = wrapper.clientHeight - 20;
+            const gap = 4;
+            
+            state.tileSize = Math.floor(Math.min( 
+                (maxW - (state.cols - 1) * gap) / state.cols, 
+                (maxH - (state.rows - 1) * gap) / state.rows 
+            ));
+            
+            if (state.tileSize > 60) state.tileSize = 60; 
+            
+            boardEl.innerHTML = '';
+            boardEl.style.gridTemplateColumns = `repeat(${state.cols}, ${state.tileSize}px)`;
+            boardEl.style.gridTemplateRows = `repeat(${state.rows}, ${state.tileSize}px)`;
+
+            for (let r = 1; r <= state.rows; r++) {
+                for (let c = 1; c <= state.cols; c++) {
+                    const tile = document.createElement('div');
+                    tile.className = 'tile';
+                    tile.style.width = `${state.tileSize}px`;
+                    tile.style.height = `${state.tileSize}px`;
+                    tile.style.fontSize = `${state.tileSize * 0.45}px`; 
+                    
+                    if (state.board[r][c] === 0) {
+                        tile.classList.add('hidden');
+                    } else {
+                        tile.innerText = state.board[r][c];
+                        tile.onclick = () => handleTileClick(tile, r, c);
+                    }
+                    boardEl.appendChild(tile);
+                }
+            }
+            document.getElementById('svg-layer').innerHTML = '';
+            state.selected = null;
+        }
+
+        function shuffleBoard() {
+            if (state.shuffles <= 0) return;
+            state.shuffles--;
+            document.getElementById('shuffle-display').innerText = formatNum(state.shuffles);
+            playSound('shuffle');
+            
+            let current = [];
+            for (let r = 1; r <= state.rows; r++) {
+                for (let c = 1; c <= state.cols; c++) {
+                    if (state.board[r][c] !== 0) current.push(state.board[r][c]);
+                }
+            }
+            
+            current.sort(() => Math.random() - 0.5);
+            
+            let i = 0;
+            for (let r = 1; r <= state.rows; r++) {
+                for (let c = 1; c <= state.cols; c++) {
+                    if (state.board[r][c] !== 0) state.board[r][c] = current[i++];
+                }
+            }
+            render();
+        }
+
+        function handleTileClick(el, r, c) {
+            if (state.board[r][c] === 0) return;
+
+            if (!state.selected) {
+                playSound('select');
+                state.selected = { el, r, c };
+                el.classList.add('selected');
+            } else {
+                if (state.selected.r === r && state.selected.c === c) {
+                    state.selected.el.classList.remove('selected');
+                    state.selected = null;
+                    playSound('select'); 
+                    return;
+                }
+
+                if (state.board[state.selected.r][state.selected.c] === state.board[r][c]) {
+                    let path = findPath({r: state.selected.r, c: state.selected.c}, {r, c});
+                    if (path) {
+                        playSound('match'); 
+                        drawPath(path);
+                        let p1 = state.selected;
+                        
+                        // Interaction lock during animation
+                        document.getElementById('board').style.pointerEvents = 'none';
+                        
+                        setTimeout(() => {
+                            state.board[p1.r][p1.c] = 0;
+                            state.board[r][c] = 0;
+                            p1.el.classList.add('hidden');
+                            p1.el.classList.remove('selected');
+                            el.classList.add('hidden');
+                            document.getElementById('svg-layer').innerHTML = ''; 
+                            
+                            state.score += 25;
+                            document.getElementById('score-display').innerText = formatScore(state.score);
+                            state.pairs--;
+                            
+                            document.getElementById('board').style.pointerEvents = 'auto';
+                            
+                            if (state.pairs === 0) {
+                                state.shuffles++; 
+                                playSound('level'); 
+                                setTimeout(() => startLevel(state.level + 1), 600); 
+                            }
+                        }, 400); // 400ms delay matches CSS transition smooth length
+                    } else {
+                        triggerError(state.selected.el, el);
+                    }
+                } else {
+                    triggerError(state.selected.el, el);
+                }
+                state.selected = null;
+            }
+        }
+
+        function triggerError(t1, t2) {
+            playSound('error');
+            t1.classList.remove('selected');
+            t1.classList.add('error');
+            t2.classList.add('error');
+            setTimeout(() => {
+                t1.classList.remove('error');
+                t2.classList.remove('error');
+            }, 400);
+        }
+
+        // --- Core Algorithm (Onet) ---
+        function findPath(start, end) {
+            const queue = [{ r: start.r, c: start.c, path: [[start.r, start.c]], dir: -1, corners: 0 }];
+            const visited = Array(state.rows + 2).fill().map(() => Array(state.cols + 2).fill().map(() => Array(4).fill(100)));
+            const dr = [-1, 0, 1, 0];
+            const dc = [0, 1, 0, -1];
+
+            while (queue.length > 0) {
+                let curr = queue.shift();
+                if (curr.r === end.r && curr.c === end.c) return curr.path;
+
+                for (let i = 0; i < 4; i++) {
+                    let nr = curr.r + dr[i];
+                    let nc = curr.c + dc[i];
+                    let nextCorners = curr.corners + (curr.dir !== -1 && curr.dir !== i ? 1 : 0);
+
+                    if (nr >= 0 && nr <= state.rows + 1 && nc >= 0 && nc <= state.cols + 1 && nextCorners <= 2) {
+                        if (state.board[nr][nc] === 0 || (nr === end.r && nc === end.c)) {
+                            if (nextCorners < visited[nr][nc][i]) {
+                                visited[nr][nc][i] = nextCorners;
+                                queue.push({
+                                    r: nr, c: nc,
+                                    path: [...curr.path, [nr, nc]],
+                                    dir: i,
+                                    corners: nextCorners
+                                });
+                            }
+                        }
+                    }
+                }
+            }
+            return null;
+        }
+
+        function drawPath(path) {
+            const svg = document.getElementById('svg-layer');
+            const boardEl = document.getElementById('board');
+            const rect = boardEl.getBoundingClientRect();
+            
+            const cellW = state.tileSize + 4; // width + gap
+            const cellH = state.tileSize + 4; // height + gap
+            
+            let polyline = document.createElementNS('http://www.w3.org/2000/svg', 'polyline');
+            polyline.setAttribute('fill', 'none');
+            polyline.setAttribute('stroke', 'rgba(255, 255, 255, 0.8)');
+            polyline.setAttribute('stroke-width', '2');
+            polyline.setAttribute('stroke-linejoin', 'round');
+            polyline.setAttribute('stroke-linecap', 'round');
+            polyline.classList.add('path-line');
+            
+            let points = "";
+            path.forEach(p => {
+                const x = rect.left + (p[1] - 0.5) * cellW;
+                const y = rect.top + (p[0] - 0.5) * cellH;
+                points += `${x},${y} `;
+            });
+            
+            polyline.setAttribute('points', points.trim());
+            
+            // Path chiziqlari uzunligiga qarab animatsiya tezligini to'g'irlash uchun maxsus hack
+            const pathLength = path.length * state.tileSize;
+            polyline.style.strokeDasharray = pathLength * 2;
+            polyline.style.strokeDashoffset = pathLength * 2;
+            
+            svg.appendChild(polyline);
+        }
+        
+        function showOverlay() {
+            playSound('level');
+            const overlay = document.getElementById('overlay-screen');
+            document.getElementById('final-score').innerText = state.score;
+            overlay.style.display = 'flex';
+            setTimeout(() => overlay.style.opacity = '1', 50);
+        }
+        
+        function resetGame() {
+            const overlay = document.getElementById('overlay-screen');
+            overlay.style.opacity = '0';
+            setTimeout(() => {
+                overlay.style.display = 'none';
+                state.score = 0;
+                state.shuffles = 3;
+                startLevel(1);
+            }, 500);
+        }
+
+        // Darcha o'zgarganda to'rni qayta hisoblash
+        window.addEventListener('resize', () => {
+            if (document.getElementById('game-screen').style.display === 'flex') {
+                render();
+            }
+        });
+    </script>
+</body>
+</html>
