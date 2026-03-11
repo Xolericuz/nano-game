@@ -1,0 +1,507 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="theme-color" content="#000000">
+    <title>XOLƎRIƆ: PURE GLASS</title>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@600;800;900&family=Poppins:wght@300;500;700&display=swap" rel="stylesheet">
+    
+    <link rel="manifest" href="data:application/manifest+json;charset=utf-8,%7B%22name%22%3A%22XOL%C6%8ERI%C6%86%22%2C%22short_name%22%3A%22XOL%C6%8ERI%C6%86%22%2C%22start_url%22%3A%22.%22%2C%22display%22%3A%22standalone%22%2C%22background_color%22%3A%22%23000000%22%2C%22theme_color%22%3A%22%23000000%22%2C%22icons%22%3A%5B%7B%22src%22%3A%22data%3Aimage%2Fpng%3Bbase64%2CiVBORw0KGgoAAAANSUhEUgAAAEAAAABACAQAAAAAYLlVAAAAPElEQVR42u3OMQEAAAwCoPk3tY/mAwkg6yYqKioqKioqKioqKioqKioqKioqKioqKioqKioqKioqKio6Wwd7gAERjPXYAAAAAElFTkSuQmCC%22%2C%22sizes%22%3A%2264x64%22%2C%22type%22%3A%22image%2Fpng%22%7D%5D%7D">
+
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; -webkit-tap-highlight-color: transparent; }
+        
+        :root {
+            --bg: #000000;
+            --glass-bg: rgba(25, 25, 25, 0.4);
+            --glass-border: rgba(255, 255, 255, 0.15);
+            --glass-glow: 0 0 25px rgba(255, 255, 255, 0.05);
+            --text-main: #ffffff;
+            --text-dim: rgba(255, 255, 255, 0.5);
+            --font-num: 'Orbitron', sans-serif;
+            --font-ui: 'Poppins', sans-serif;
+        }
+
+        body {
+            background-color: var(--bg); color: var(--text-main); font-family: var(--font-ui);
+            width: 100vw; height: 100dvh; overflow: hidden; display: flex; flex-direction: column; position: fixed;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        /* --- SCREENS --- */
+        .screen {
+            position: fixed; inset: 0; display: flex; flex-direction: column;
+            justify-content: center; align-items: center; z-index: 1000;
+            background: var(--bg); transition: opacity 0.8s ease, filter 0.8s ease;
+        }
+        .screen.hidden { opacity: 0; pointer-events: none; filter: blur(20px); }
+
+        .logo {
+            font-family: var(--font-num); font-size: clamp(3rem, 12vw, 4.5rem);
+            font-weight: 900; letter-spacing: 12px; margin-bottom: 50px; color: #fff;
+            text-shadow: 0 0 20px rgba(255,255,255,0.2); animation: breathe 3s infinite alternate;
+        }
+        @keyframes breathe { from { opacity: 0.6; } to { opacity: 1; } }
+
+        /* --- LOGIN --- */
+        .input-group { display: flex; flex-direction: column; gap: 20px; width: 85%; max-width: 300px; }
+        
+        .clean-input {
+            background: transparent; border: none; border-bottom: 1px solid var(--text-dim);
+            padding: 15px 5px; color: #fff; font-size: 1.2rem; text-align: center;
+            outline: none; font-family: var(--font-ui); font-weight: 300; letter-spacing: 2px; transition: 0.3s;
+        }
+        .clean-input::placeholder { color: var(--text-dim); font-weight: 300; text-transform: lowercase; }
+        .clean-input:focus { border-bottom: 1px solid #fff; }
+
+        .btn-glass {
+            background: rgba(255,255,255,0.05); color: #fff; border: 1px solid var(--glass-border); border-radius: 14px;
+            padding: 16px; font-family: var(--font-ui); font-weight: 500; font-size: 0.9rem;
+            cursor: pointer; letter-spacing: 2px; transition: all 0.3s ease; backdrop-filter: blur(10px);
+        }
+        .btn-glass:active { background: #fff; color: #000; transform: scale(0.96); }
+        
+        .pwa-btn { background: transparent; color: var(--text-dim); border: none; font-size: 0.75rem; margin-top: 40px; cursor: pointer; text-decoration: underline; text-underline-offset: 4px; display: none; }
+        #btn-continue { display: none; }
+
+        /* --- GAME UI --- */
+        #game-ui { flex: 1; display: flex; flex-direction: column; opacity: 0; transition: opacity 0.8s ease; z-index: 10; height: 100%; filter: blur(10px); }
+        #game-ui.active { opacity: 1; filter: blur(0); }
+
+        /* Board Wrapper (Takes top space) */
+        #board-wrapper { position: relative; flex: 1; display: flex; justify-content: center; align-items: center; padding: 20px 10px 10px 10px; overflow: hidden; }
+        
+        /* MONOCHROME GRID */
+        #grid { display: grid; gap: 6px; z-index: 20; max-width: 100%; max-height: 100%; filter: grayscale(100%) brightness(1.2); }
+        
+        .tile {
+            background: rgba(255,255,255,0.03); border: 1px solid transparent;
+            border-radius: 12px; display: flex; justify-content: center; align-items: center;
+            cursor: pointer; transition: all 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            aspect-ratio: 1/1; 
+        }
+        .tile:active { transform: scale(0.88); background: rgba(255,255,255,0.08); }
+        .tile.selected { background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.6); transform: scale(1.08); z-index: 30; box-shadow: 0 0 15px rgba(255,255,255,0.1); }
+        .tile.matched { opacity: 0; transform: scale(0.5); pointer-events: none; transition: 0.4s ease; filter: blur(5px); }
+
+        @keyframes shake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-4px); } 75% { transform: translateX(4px); } }
+        .error-shake { animation: shake 0.3s ease; border-color: #fff; background: rgba(255,255,255,0.1); }
+
+        /* Smooth Path */
+        #svg-layer { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 100; }
+        .path-line {
+            fill: none; stroke: #fff; stroke-width: 3; stroke-linecap: round; stroke-linejoin: round;
+            filter: drop-shadow(0 0 8px rgba(255,255,255,0.5)); stroke-dasharray: 1000; stroke-dashoffset: 1000;
+            animation: drawPath 0.3s ease-out forwards;
+        }
+        @keyframes drawPath { to { stroke-dashoffset: 0; opacity: 0; } }
+
+        /* Floating Score */
+        .float-text {
+            position: absolute; color: #fff; font-weight: 700; font-size: 1.1rem;
+            text-shadow: 0 0 10px rgba(255,255,255,0.5); pointer-events: none; z-index: 200; font-family: var(--font-num);
+            animation: floatUp 0.8s ease-out forwards;
+        }
+        @keyframes floatUp { 0% { opacity: 1; transform: translateY(0); } 100% { opacity: 0; transform: translateY(-30px); filter: blur(2px); } }
+
+        /* --- BOTTOM DASHBOARD (Based on User Image) --- */
+        .bottom-dock {
+            background: var(--glass-bg); backdrop-filter: blur(25px); -webkit-backdrop-filter: blur(25px);
+            border: 1px solid var(--glass-border); border-radius: 24px;
+            margin: 0 15px 20px 15px; padding: 18px 20px;
+            display: flex; flex-direction: column; gap: 15px;
+            flex-shrink: 0; z-index: 50; box-shadow: var(--glass-glow);
+            padding-bottom: env(safe-area-inset-bottom, 20px);
+        }
+
+        .dock-stats { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 12px; }
+        .stat-box { display: flex; flex-direction: column; align-items: center; gap: 4px; }
+        .stat-lbl { font-size: 0.6rem; color: var(--text-dim); font-weight: 500; letter-spacing: 1.5px; text-transform: uppercase; }
+        .stat-val { font-size: 1.2rem; font-weight: 800; color: #fff; font-family: var(--font-num); }
+        
+        .pulse-warn { animation: warnPulse 0.5s infinite alternate; }
+        @keyframes warnPulse { from { opacity: 1; } to { opacity: 0.4; } }
+
+        .dock-actions { display: flex; justify-content: space-between; align-items: center; }
+        .player-info { display: flex; flex-direction: column; }
+        .player-lbl { font-size: 0.55rem; color: var(--text-dim); letter-spacing: 1px; margin-bottom: 2px;}
+        .player-name { font-size: 1rem; font-weight: 600; color: #fff; }
+        
+        .btn-action-group { display: flex; gap: 8px; }
+        .btn-dock {
+            background: rgba(255,255,255,0.05); color: #fff; border: 1px solid var(--glass-border); border-radius: 12px;
+            padding: 10px 15px; font-family: var(--font-ui); font-size: 0.8rem; font-weight: 500;
+            cursor: pointer; transition: 0.2s; display: flex; align-items: center; justify-content: center;
+        }
+        .btn-dock:active { background: #fff; color: #000; transform: scale(0.95); }
+
+        /* --- LOCKDOWN & MATH --- */
+        .overlay-screen {
+            position: absolute; inset: 0; background: rgba(0,0,0,0.85); backdrop-filter: blur(15px); -webkit-backdrop-filter: blur(15px);
+            z-index: 500; display: flex; flex-direction: column; justify-content: center; align-items: center;
+            opacity: 0; pointer-events: none; transition: 0.5s ease;
+        }
+        .overlay-screen.show { opacity: 1; pointer-events: all; }
+
+        .lock-title { font-size: 2rem; font-weight: 800; letter-spacing: 6px; margin-bottom: 10px; font-family: var(--font-num); text-align: center; text-transform: uppercase;}
+        .lock-sub { font-size: 0.85rem; color: var(--text-dim); font-weight: 300; margin-bottom: 40px; text-align: center; max-width: 80%; }
+
+        .math-eq { font-size: 2.8rem; font-weight: 800; font-family: var(--font-num); letter-spacing: 3px; }
+        .math-input-box {
+            font-size: 2.2rem; font-weight: 500; font-family: var(--font-num); margin-top: 15px; margin-bottom: 40px;
+            min-height: 50px; min-width: 120px; text-align: center; border-bottom: 2px solid var(--text-dim); transition: 0.3s;
+        }
+        
+        .numpad { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; width: 85%; max-width: 300px; }
+        .num-key {
+            background: rgba(255,255,255,0.03); border: 1px solid var(--glass-border); color: #fff;
+            padding: 20px 0; border-radius: 14px; font-family: var(--font-num); font-size: 1.2rem;
+            font-weight: 500; cursor: pointer; transition: 0.2s; display: flex; justify-content: center; align-items: center;
+        }
+        .num-key:active { background: #fff; color: #000; transform: scale(0.95); }
+        .key-del { font-size: 0.85rem; font-family: var(--font-ui); color: var(--text-dim); }
+        .key-ok { background: rgba(255,255,255,0.1); font-size: 0.9rem; font-family: var(--font-ui); border-color: rgba(255,255,255,0.4);}
+
+        /* --- LEVEL UP & GAME OVER --- */
+        .load-track { width: 220px; height: 1px; background: rgba(255,255,255,0.1); margin-top: 20px; position: relative; overflow: hidden; }
+        .load-fill { position: absolute; top: 0; left: 0; height: 100%; width: 0%; background: #fff; box-shadow: 0 0 10px #fff; transition: width 1.5s ease-in-out; }
+    </style>
+</head>
+<body>
+
+    <div id="screen-login" class="screen">
+        <div class="logo">XOL<span style="display:inline-block; transform:scaleX(-1);">E</span>RI<span style="display:inline-block; transform:scaleX(-1);">C</span></div>
+        <div class="input-group">
+            <input type="text" id="inp-name" class="clean-input" placeholder="[ ismingiz ]" autocomplete="off" spellcheck="false">
+            <button class="btn-glass" id="btn-start" onclick="initGame(false)">ISHGA TUSHIRISH</button>
+            <button class="btn-glass" id="btn-continue" onclick="initGame(true)">SEANSI DAVOM ETTIRISH</button>
+        </div>
+        <button class="pwa-btn" id="btn-pwa" onclick="installApp()">[ TIZIMNI QURILMAGA O'RNATISH ]</button>
+    </div>
+
+    <div id="screen-lockdown" class="screen hidden">
+        <div class="lock-title">TIZIM BLOKLANDI</div>
+        <div class="lock-sub">Xavfsizlik protokoli faollashdi. Qulfni ochish uchun masalani yeching:</div>
+        
+        <div class="math-eq" id="math-question">0 + 0 = ?</div>
+        <div class="math-input-box" id="math-answer">_</div>
+
+        <div class="numpad">
+            <button class="num-key" onclick="pressKey('1')">1</button>
+            <button class="num-key" onclick="pressKey('2')">2</button>
+            <button class="num-key" onclick="pressKey('3')">3</button>
+            <button class="num-key" onclick="pressKey('4')">4</button>
+            <button class="num-key" onclick="pressKey('5')">5</button>
+            <button class="num-key" onclick="pressKey('6')">6</button>
+            <button class="num-key" onclick="pressKey('7')">7</button>
+            <button class="num-key" onclick="pressKey('8')">8</button>
+            <button class="num-key" onclick="pressKey('9')">9</button>
+            <button class="num-key key-del" onclick="pressKey('DEL')">DEL</button>
+            <button class="num-key" onclick="pressKey('0')">0</button>
+            <button class="num-key key-ok" onclick="pressKey('OK')">OK</button>
+        </div>
+    </div>
+
+    <div id="screen-gameover" class="screen hidden">
+        <div class="lock-title" style="font-size: 1.8rem;">SEANS YAKUNLANDI</div>
+        <div class="lock-sub" style="font-size: 1.2rem; color: #fff; margin-bottom: 50px;">YAKUNIY HISOB: <br><span id="final-score" style="font-size: 3rem; font-family: var(--font-num); font-weight: 800;">00000</span></div>
+        <button class="btn-glass" onclick="resetToLogin()" style="width: 260px;">YANGI SEANS</button>
+    </div>
+
+    <div id="game-ui">
+        
+        <div id="board-wrapper">
+            <div id="grid"></div>
+            <svg id="svg-layer"></svg>
+            
+            <div id="screen-levelup" class="overlay-screen">
+                <div class="lock-title" style="font-size: 1.8rem;">DARAJA TOZALANDI</div>
+                <div class="lock-sub" style="font-size: 0.8rem; letter-spacing: 2px;">KЕYINGI QATLAM YUKLANMOQDA...</div>
+                <div class="load-track"><div class="load-fill" id="load-bar"></div></div>
+            </div>
+        </div>
+
+        <div class="bottom-dock">
+            <div class="dock-stats">
+                <div class="stat-box"><span class="stat-lbl">DARAJA</span><span class="stat-val" id="val-lvl">01</span></div>
+                <div class="stat-box"><span class="stat-lbl">XATO</span><span class="stat-val" id="val-err">00/03</span></div>
+                <div class="stat-box"><span class="stat-lbl">KOMBO</span><span class="stat-val" id="val-combo">x1</span></div>
+                <div class="stat-box"><span class="stat-lbl">HISOB</span><span class="stat-val" id="val-score">00000</span></div>
+            </div>
+            <div class="dock-actions">
+                <div class="player-info">
+                    <span class="player-lbl">O'YINCHI</span>
+                    <span class="player-name" id="val-user">GUEST</span>
+                </div>
+                <div class="btn-action-group">
+                    <button class="btn-dock" style="padding: 10px;" onclick="triggerGameOver()">✕</button>
+                    <button class="btn-dock" onclick="shuffleGrid()">Aralashtirish</button>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        // PWA Setup
+        let deferredPrompt;
+        window.addEventListener('beforeinstallprompt', (e) => { e.preventDefault(); deferredPrompt = e; document.getElementById('btn-pwa').style.display = 'block'; });
+        function installApp() { if(deferredPrompt) { deferredPrompt.prompt(); deferredPrompt.userChoice.then(()=>{ document.getElementById('btn-pwa').style.display = 'none'; deferredPrompt=null;}); } }
+        if('serviceWorker' in navigator) { const swCode = `self.addEventListener('fetch', e => e.respondWith(fetch(e.request).catch(()=>new Response('Offline'))));`; const b = new Blob([swCode], {type:'application/javascript'}); navigator.serviceWorker.register(URL.createObjectURL(b)).catch(()=>{}); }
+
+        // Massive Emoji DB (Grayscale handles the monochrome look natively in CSS)
+        const EMOJI_DB = ["⚽","🏀","🏈","⚾","🎾","🏐","🏉","🎱","🪀","🏓","🏸","🏒","🏑","🥍","🚗","🚕","🚙","🚌","🚎","🏎️","🚓","🚑","🚒","🚐","🛻","🚚","🚛","🚜","🛵","⌚","📱","💻","⌨️","🖥️","🖨️","🖱️","🖲️","🕹️","🗜️","💽","💾","💿","📀","📼","🍎","🍒","🍓","🍉","🍊","🍋","🍌","🍏","🍐","🍑","🍔","🍕","🍟","🌭","🍿","😀","😂","🥰","😎","🤔","😴","😷","🤠","👻","👽","🤖","😺","🐶","🦊","🐻","🌟","⭐","✨","💫","🪐","🌍","🌙","☀️","🌈","💧","🔥","⚡","❄️","🌊","🌪️","💎","🔮","🧿","🎲","🎯","🎮","🤍","🖤","🔘","⚪","⚫","🏁","🏴","🏳️","☁️"];
+        
+        let state = { level: 1, score: 0, err: 0, rows: 0, cols: 0, grid: [], player: "", locked: false, math: null };
+        let combo = 1; let cTimer = null; let isAnim = false; let mathAns = "";
+
+        const el = {
+            login: document.getElementById('screen-login'), game: document.getElementById('game-ui'),
+            lock: document.getElementById('screen-lockdown'), over: document.getElementById('screen-gameover'), lvlUp: document.getElementById('screen-levelup'),
+            inpName: document.getElementById('inp-name'), btnCont: document.getElementById('btn-continue'),
+            vLvl: document.getElementById('val-lvl'), vErr: document.getElementById('val-err'), vScore: document.getElementById('val-score'),
+            vUser: document.getElementById('val-user'), vCombo: document.getElementById('val-combo'),
+            grid: document.getElementById('grid'), svg: document.getElementById('svg-layer'), board: document.getElementById('board-wrapper'),
+            mQ: document.getElementById('math-question'), mA: document.getElementById('math-answer'), lBar: document.getElementById('load-bar'), fScore: document.getElementById('final-score')
+        };
+
+        window.onload = () => {
+            const mem = localStorage.getItem('xoleric_ultimate');
+            if (mem) {
+                const data = JSON.parse(mem);
+                if(data.locked) { state = data; triggerLockdown(true); }
+                else { el.btnCont.style.display = 'block'; el.inpName.value = data.player; }
+            }
+        };
+
+        function save() { localStorage.setItem('xoleric_ultimate', JSON.stringify(state)); }
+        function wipe() { localStorage.removeItem('xoleric_ultimate'); el.btnCont.style.display = 'none'; }
+        const pad = (n, s) => String(n).padStart(s, '0');
+
+        // Dynamic Error Formula
+        function getMaxErr() {
+            if (state.level === 1) return 3;
+            if (state.level === 2) return 5;
+            return 5 + (state.level - 2) * 5; // lvl 3->10, lvl 4->15
+        }
+
+        window.initGame = (isContinue) => {
+            // Fullscreen request upon user interaction
+            try { document.documentElement.requestFullscreen(); } catch(e){}
+
+            if(isContinue) {
+                const mem = JSON.parse(localStorage.getItem('xoleric_ultimate'));
+                if(mem && !mem.locked) { state = mem; state.selected = null; isAnim = false; }
+            } else {
+                state.player = el.inpName.value.trim() || "NANO";
+                state.level = 1; state.score = 0; state.err = 0; state.locked = false; combo = 1;
+            }
+            
+            el.login.classList.add('hidden');
+            el.vUser.innerText = state.player.substring(0, 10);
+            
+            setTimeout(() => {
+                el.game.classList.add('active');
+                if(!isContinue) buildLevel();
+                else { drawGrid(); updateHUD(); }
+            }, 600);
+        };
+
+        window.resetToLogin = () => { el.over.classList.add('hidden'); el.login.classList.remove('hidden'); el.inpName.value = ""; };
+
+        window.triggerGameOver = () => {
+            el.fScore.innerText = pad(state.score, 5);
+            el.game.classList.remove('active');
+            setTimeout(() => { el.over.classList.remove('hidden'); wipe(); }, 600);
+        };
+
+        function updateHUD() {
+            const maxErr = getMaxErr();
+            el.vLvl.innerText = state.level;
+            el.vScore.innerText = pad(state.score, 5);
+            el.vErr.innerText = `${pad(state.err, 2)}/${pad(maxErr, 2)}`;
+            el.vCombo.innerText = `x${combo}`;
+            
+            // Pulse logic
+            el.vErr.className = `stat-val ${state.err >= maxErr - 1 ? 'pulse-warn' : ''}`;
+        }
+
+        function buildLevel() {
+            let baseRows = 6; let baseCols = window.innerWidth > 600 ? 8 : 6;
+            state.rows = Math.min(baseRows + Math.floor(state.level), 14);
+            state.cols = Math.min(baseCols + Math.floor((state.level - 1) / 2), 10);
+            if ((state.rows * state.cols) % 2 !== 0) state.rows++;
+
+            const total = state.rows * state.cols;
+            let pool = [...EMOJI_DB].sort(()=>Math.random()-0.5).slice(0, total/2);
+            let items = [...pool, ...pool].sort(()=>Math.random()-0.5);
+
+            state.grid = Array.from({length: state.rows+2}, () => new Array(state.cols+2).fill(null));
+            let i = 0;
+            for(let r=1; r<=state.rows; r++) for(let c=1; c<=state.cols; c++) state.grid[r][c] = items[i++];
+            
+            drawGrid(); updateHUD(); save();
+        }
+
+        function drawGrid() {
+            el.grid.style.gridTemplateColumns = `repeat(${state.cols}, 1fr)`;
+            el.grid.style.gridTemplateRows = `repeat(${state.rows}, 1fr)`;
+            el.grid.innerHTML = '';
+            
+            for(let r=1; r<=state.rows; r++) {
+                for(let c=1; c<=state.cols; c++) {
+                    const t = document.createElement('div'); t.className = 'tile';
+                    const v = state.grid[r][c];
+                    if(v) { t.innerText = v; t.style.fontSize = `min(9vw, 5vh, 40px)`; t.onclick = () => tapTile(r, c, t); }
+                    else t.classList.add('matched');
+                    t.id = `t-${r}-${c}`; el.grid.appendChild(t);
+                }
+            }
+            el.svg.innerHTML = '';
+        }
+
+        function tapTile(r, c, dom) {
+            if(isAnim) return;
+            if(state.selected) {
+                const {r: sr, c: sc} = state.selected; const prev = document.getElementById(`t-${sr}-${sc}`);
+                if(sr === r && sc === c) { dom.classList.remove('selected'); state.selected = null; return; }
+                
+                if(state.grid[r][c] === state.grid[sr][sc]) {
+                    const path = getPath(sr, sc, r, c);
+                    if(path) { isAnim = true; doMatch(state.selected, {r,c}, path); return; }
+                    else doError(dom, prev);
+                } else doError(dom, prev);
+                
+                prev.classList.remove('selected'); state.selected = null;
+            } else { state.selected = {r,c}; dom.classList.add('selected'); }
+        }
+
+        function doError(t1, t2) {
+            state.err++; updateHUD();
+            t1.classList.add('error-shake'); if(t2) t2.classList.add('error-shake');
+            setTimeout(() => { t1.classList.remove('error-shake'); if(t2) t2.classList.remove('error-shake'); }, 300);
+            combo = 1; updateHUD(); save();
+            
+            if(state.err >= getMaxErr()) setTimeout(()=>triggerLockdown(false), 400);
+        }
+
+        function getPath(r1, c1, r2, c2) {
+            const q = [{r:r1, c:c1, d:-1, t:0, p:[[r1,c1]]}]; const v = new Set();
+            while(q.length > 0) {
+                const cur = q.shift();
+                if(cur.t > 2) continue;
+                if(cur.r === r2 && cur.c === c2) return cur.p;
+                const dirs = [[-1,0],[1,0],[0,-1],[0,1]];
+                for(let i=0; i<4; i++) {
+                    const nr = cur.r + dirs[i][0]; const nc = cur.c + dirs[i][1];
+                    if(nr >= 0 && nr < state.rows+2 && nc >= 0 && nc < state.cols+2) {
+                        if(state.grid[nr][nc] === null || (nr === r2 && nc === c2)) {
+                            const nt = (cur.d !== -1 && cur.d !== i) ? cur.t + 1 : cur.t;
+                            const key = `${nr},${nc},${i},${nt}`;
+                            if(!v.has(key)) { v.add(key); q.push({r:nr, c:nc, d:i, t:nt, p:[...cur.p, [nr,nc]]}); }
+                        }
+                    }
+                }
+            } return null;
+        }
+
+        function doMatch(p1, p2, path) {
+            renderPath(path); clearTimeout(cTimer);
+            let earned = 150 * combo; state.score += earned;
+            popText(`+${earned}`, p2.r, p2.c);
+            combo++; updateHUD();
+            cTimer = setTimeout(() => { combo = 1; updateHUD(); }, 3000);
+
+            setTimeout(() => {
+                state.grid[p1.r][p1.c] = null; state.grid[p2.r][p2.c] = null;
+                document.getElementById(`t-${p1.r}-${p1.c}`).className = 'tile matched';
+                document.getElementById(`t-${p2.r}-${p2.c}`).className = 'tile matched';
+                save(); setTimeout(()=>{el.svg.innerHTML='';}, 150);
+                state.selected = null; isAnim = false; checkWin();
+            }, 100);
+        }
+
+        function popText(txt, r, c) {
+            const t = document.getElementById(`t-${r}-${c}`); if(!t) return;
+            const r1 = t.getBoundingClientRect(); const r2 = el.board.getBoundingClientRect();
+            const pop = document.createElement('div'); pop.className = 'float-text'; pop.innerText = txt;
+            pop.style.left = `${r1.left - r2.left + (r1.width/2) - 15}px`; pop.style.top = `${r1.top - r2.top}px`;
+            el.board.appendChild(pop); setTimeout(()=>pop.remove(), 800);
+        }
+
+        function renderPath(path) {
+            const rW = el.svg.getBoundingClientRect(); const rG = el.grid.getBoundingClientRect();
+            const cW = rG.width / state.cols; const cH = rG.height / state.rows;
+            const oX = rG.left - rW.left; const oY = rG.top - rW.top;
+            const pts = path.map(p => `${oX + (p[1]-0.5)*cW},${oY + (p[0]-0.5)*cH}`).join(' ');
+            const poly = document.createElementNS("http://www.w3.org/2000/svg", "polyline");
+            poly.setAttribute("points", pts); poly.setAttribute("class", "path-line");
+            el.svg.appendChild(poly);
+        }
+
+        function checkWin() {
+            if(!state.grid.flat().some(c => c !== null)) {
+                state.level++; state.err = 0; // Reset errors
+                save();
+                el.lvlUp.classList.add('show');
+                setTimeout(()=>el.lBar.style.width = '100%', 100);
+                setTimeout(() => {
+                    el.lvlUp.classList.remove('show');
+                    el.lBar.style.width = '0%';
+                    setupLevel();
+                }, 1600);
+            }
+        }
+
+        window.shuffleGrid = () => {
+            if(isAnim) return;
+            let act = [];
+            for(let r=1; r<=state.rows; r++) for(let c=1; c<=state.cols; c++) if(state.grid[r][c] !== null) act.push(state.grid[r][c]);
+            act.sort(()=>Math.random()-0.5); let i=0;
+            for(let r=1; r<=state.rows; r++) for(let c=1; c<=state.cols; c++) if(state.grid[r][c] !== null) state.grid[r][c] = act[i++];
+            state.score = Math.max(0, state.score - 50); combo = 1; updateHUD(); save(); drawGrid(); state.selected = null;
+        };
+
+        // --- MATH OVERRIDE ---
+        function triggerLockdown(fromLoad = false) {
+            if(!fromLoad) {
+                state.locked = true;
+                const ops = ['+', '-', '*']; const op = ops[Math.floor(Math.random()*3)];
+                let a, b, ans;
+                if(op==='+'){a=Math.floor(Math.random()*50)+10; b=Math.floor(Math.random()*50)+10; ans=a+b;}
+                else if(op==='-'){a=Math.floor(Math.random()*50)+40; b=Math.floor(Math.random()*39)+1; ans=a-b;}
+                else {a=Math.floor(Math.random()*9)+3; b=Math.floor(Math.random()*9)+3; ans=a*b;}
+                state.math = {q: `${a} ${op} ${b} = ?`, a: ans};
+                save();
+            }
+            el.game.classList.remove('active'); el.login.classList.add('hidden'); el.lock.classList.remove('hidden');
+            el.mQ.innerText = state.math.q; mathAns = ""; renderMath();
+        }
+
+        window.pressKey = (k) => {
+            if(k === 'DEL') mathAns = mathAns.slice(0, -1);
+            else if(k === 'OK') submitMath();
+            else if(mathAns.length < 5) mathAns += k;
+            renderMath();
+        };
+
+        function renderMath() { el.mA.innerText = mathAns || "_"; }
+
+        function submitMath() {
+            if(parseInt(mathAns) === state.math.a) {
+                el.mA.innerText = "RUXSAT"; el.mA.style.borderBottomColor = "#fff";
+                setTimeout(() => {
+                    state.locked = false; state.math = null; state.err = 0; state.score = 0; state.level = 1;
+                    save(); el.lock.classList.add('hidden'); el.game.classList.add('active'); setupLevel();
+                }, 800);
+            } else {
+                el.mA.style.transform = "translateX(-10px)";
+                setTimeout(()=>el.mA.style.transform = "translateX(10px)", 100);
+                setTimeout(()=>el.mA.style.transform = "translateX(0)", 200);
+                setTimeout(() => { mathAns = ""; renderMath(); }, 400);
+            }
+        }
+    </script>
+</body>
+</html>
