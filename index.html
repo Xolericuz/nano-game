@@ -1,0 +1,525 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="theme-color" content="#000000">
+    <title>XOLƎRIƆ: PURE</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;500;700;900&display=swap" rel="stylesheet">
+    
+    <link rel="manifest" href="data:application/manifest+json;charset=utf-8,%7B%22name%22%3A%22XOL%C6%8ERI%C6%86%22%2C%22short_name%22%3A%22XOL%C6%8ERI%C6%86%22%2C%22start_url%22%3A%22.%22%2C%22display%22%3A%22standalone%22%2C%22background_color%22%3A%22%23000000%22%2C%22theme_color%22%3A%22%23000000%22%2C%22icons%22%3A%5B%7B%22src%22%3A%22data%3Aimage%2Fpng%3Bbase64%2CiVBORw0KGgoAAAANSUhEUgAAAEAAAABACAQAAAAAYLlVAAAAPElEQVR42u3OMQEAAAwCoPk3tY/mAwkg6yYqKioqKioqKioqKioqKioqKioqKioqKioqKioqKioqKio6Wwd7gAERjPXYAAAAAElFTkSuQmCC%22%2C%22sizes%22%3A%2264x64%22%2C%22type%22%3A%22image%2Fpng%22%7D%5D%7D">
+
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; -webkit-tap-highlight-color: transparent; }
+        
+        :root {
+            --bg: #000000;
+            --glass-light: rgba(255, 255, 255, 0.03);
+            --glass-mid: rgba(255, 255, 255, 0.08);
+            --glass-strong: rgba(255, 255, 255, 0.15);
+            --border: rgba(255, 255, 255, 0.15);
+            --text-main: #ffffff;
+            --text-dim: #888888;
+            --font-soft: 'Poppins', sans-serif;
+        }
+
+        body {
+            background-color: var(--bg); color: var(--text-main); font-family: var(--font-soft);
+            width: 100vw; height: 100dvh; overflow: hidden; display: flex; flex-direction: column; position: fixed;
+        }
+
+        /* --- SCREENS --- */
+        .screen {
+            position: fixed; inset: 0; display: flex; flex-direction: column;
+            justify-content: center; align-items: center; z-index: 1000;
+            background: var(--bg); transition: opacity 0.8s ease, filter 0.8s ease;
+        }
+        .screen.hidden { opacity: 0; pointer-events: none; filter: blur(10px); }
+
+        .logo {
+            font-family: var(--font-soft); font-size: clamp(3.5rem, 12vw, 5rem);
+            font-weight: 900; letter-spacing: 10px; margin-bottom: 50px; color: #fff;
+            animation: pulseSoft 3s infinite alternate; text-shadow: 0 0 20px rgba(255,255,255,0.2);
+        }
+        @keyframes pulseSoft { from { opacity: 0.7; } to { opacity: 1; } }
+
+        /* --- LOGIN UI --- */
+        .input-group { display: flex; flex-direction: column; gap: 20px; width: 80%; max-width: 320px; }
+        
+        .clean-input {
+            background: transparent; border: none; border-bottom: 1px solid rgba(255,255,255,0.3);
+            padding: 15px 5px; color: #fff; font-size: 1.2rem; text-align: center;
+            outline: none; font-family: var(--font-soft); font-weight: 300; letter-spacing: 2px;
+            transition: 0.3s;
+        }
+        .clean-input::placeholder { color: rgba(255,255,255,0.2); font-weight: 300; text-transform: lowercase; }
+        .clean-input:focus { border-bottom: 1px solid #fff; }
+
+        .glass-btn {
+            background: #000; color: #fff; border: 1px solid var(--border); border-radius: 12px;
+            padding: 16px; font-family: var(--font-soft); font-weight: 500; font-size: 1rem;
+            cursor: pointer; letter-spacing: 1px; transition: all 0.3s ease;
+        }
+        .glass-btn:active { background: #fff; color: #000; transform: scale(0.97); }
+        
+        .pwa-btn {
+            background: transparent; color: var(--text-dim); border: none; font-size: 0.8rem;
+            margin-top: 30px; cursor: pointer; font-weight: 300; transition: 0.3s; display: none;
+        }
+        .pwa-btn:active { color: #fff; }
+        #btn-continue { display: none; }
+
+        /* --- GAME UI --- */
+        #game-ui { flex: 1; display: flex; flex-direction: column; opacity: 0; transition: opacity 1s ease; z-index: 10; height: 100%; filter: blur(10px); }
+        #game-ui.active { opacity: 1; filter: blur(0); }
+
+        /* Header HUD */
+        .hud-header {
+            height: 10%; background: var(--glass-light); border-bottom: 1px solid var(--border);
+            display: flex; justify-content: space-between; align-items: center; padding: 0 20px;
+            backdrop-filter: blur(15px); -webkit-backdrop-filter: blur(15px); z-index: 50;
+        }
+        .hud-item { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; }
+        .hud-label { font-size: 0.65rem; color: var(--text-dim); font-weight: 500; letter-spacing: 1px; }
+        .hud-val { font-size: 1.1rem; font-weight: 700; color: #fff; }
+        
+        .alert-blink { animation: alertPulse 0.5s infinite alternate; }
+        @keyframes alertPulse { from { opacity: 1; } to { opacity: 0.2; } }
+
+        /* Board */
+        #board-wrapper { position: relative; height: 75%; display: flex; justify-content: center; align-items: center; padding: 15px; }
+        #grid { display: grid; gap: 6px; z-index: 20; max-width: 100%; max-height: 100%; }
+        
+        /* Soft Tiles */
+        .tile {
+            background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.05);
+            border-radius: 14px; display: flex; justify-content: center; align-items: center;
+            cursor: pointer; transition: all 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+            aspect-ratio: 1/1; 
+        }
+        .tile:active { transform: scale(0.9); background: var(--glass-mid); }
+        .tile.selected { background: var(--glass-strong); border: 1px solid rgba(255,255,255,0.5); transform: scale(1.05); z-index: 30; }
+        .tile.matched { opacity: 0; transform: scale(0.5); pointer-events: none; transition: 0.4s ease; }
+
+        /* Error Shake (Monochrome) */
+        @keyframes shakeSoft {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-5px); }
+            75% { transform: translateX(5px); }
+        }
+        .shake-err { animation: shakeSoft 0.3s ease; border-color: #fff; background: var(--glass-strong); }
+
+        /* Soft Line */
+        #svg-layer { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 100; }
+        .soft-line {
+            fill: none; stroke: #fff; stroke-width: 3; stroke-linecap: round; stroke-linejoin: round;
+            filter: drop-shadow(0 0 6px rgba(255,255,255,0.5)); stroke-dasharray: 1000; stroke-dashoffset: 1000;
+            animation: drawSoft 0.3s ease-in-out forwards;
+        }
+        @keyframes drawSoft { to { stroke-dashoffset: 0; } }
+
+        /* Floating Score */
+        .float-score {
+            position: absolute; color: #fff; font-weight: 700; font-size: 1.1rem;
+            text-shadow: 0 0 10px rgba(255,255,255,0.5); pointer-events: none; z-index: 200;
+            animation: floatUp 0.8s ease-out forwards;
+        }
+        @keyframes floatUp { 0% { opacity: 1; transform: translateY(0); } 100% { opacity: 0; transform: translateY(-30px); } }
+
+        /* Footer Deck */
+        .hud-footer {
+            height: 15%; background: var(--glass-light); border-top: 1px solid var(--border);
+            display: flex; justify-content: space-between; align-items: center; padding: 0 20px;
+            backdrop-filter: blur(15px); -webkit-backdrop-filter: blur(15px); z-index: 50;
+        }
+        .btn-shuffle {
+            background: transparent; color: #fff; border: 1px solid rgba(255,255,255,0.3); border-radius: 10px;
+            padding: 10px 14px; font-family: var(--font-soft); font-size: 0.75rem; font-weight: 500;
+            cursor: pointer; transition: 0.2s;
+        }
+        .btn-shuffle:active { background: #fff; color: #000; }
+
+        /* --- OVERLAYS (Lockdown, Level Up, Game Over) --- */
+        .glass-overlay {
+            position: absolute; inset: 0; background: rgba(0,0,0,0.85); backdrop-filter: blur(12px);
+            z-index: 500; display: flex; flex-direction: column; justify-content: center; align-items: center;
+            opacity: 0; pointer-events: none; transition: 0.5s ease;
+        }
+        .glass-overlay.show { opacity: 1; pointer-events: all; }
+
+        .overlay-title { font-size: 2rem; font-weight: 700; letter-spacing: 4px; margin-bottom: 10px; text-align: center; }
+        .overlay-sub { font-size: 0.9rem; color: var(--text-dim); font-weight: 300; margin-bottom: 30px; text-align: center; max-width: 80%;}
+
+        /* Math Lockdown */
+        .math-box { display: flex; flex-direction: column; align-items: center; margin-bottom: 30px; }
+        .math-q { font-size: 2.5rem; font-weight: 700; letter-spacing: 2px; }
+        .math-ans {
+            font-size: 2rem; font-weight: 300; margin-top: 10px; min-height: 45px; border-bottom: 2px solid #fff;
+            min-width: 100px; text-align: center; transition: 0.3s;
+        }
+        
+        .numpad { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; width: 80%; max-width: 300px; }
+        .num-btn {
+            background: var(--glass-light); border: 1px solid var(--border); color: #fff;
+            padding: 18px; border-radius: 14px; font-family: var(--font-soft); font-size: 1.2rem;
+            font-weight: 500; cursor: pointer; transition: 0.2s; backdrop-filter: blur(5px);
+        }
+        .num-btn:active { background: #fff; color: #000; transform: scale(0.95); }
+        
+        /* Loading Bar for Level Up */
+        .load-bar-wrap { width: 200px; height: 2px; background: rgba(255,255,255,0.1); border-radius: 2px; overflow: hidden; }
+        .load-bar { height: 100%; width: 0%; background: #fff; transition: width 1.5s ease-in-out; }
+    </style>
+</head>
+<body>
+
+    <div id="login-screen" class="screen">
+        <div class="logo">XOL<span style="display:inline-block; transform:scaleX(-1);">E</span>RI<span style="display:inline-block; transform:scaleX(-1);">C</span></div>
+        <div class="input-group">
+            <input type="text" id="player-name" class="clean-input" placeholder="[ ismingiz ]" autocomplete="off" spellcheck="false">
+            <button class="glass-btn" onclick="startNewGame()">ISHGA TUSHIRISH</button>
+            <button class="glass-btn" id="btn-continue" onclick="continueGame()">SEANSI DAVOM ETTIRISH</button>
+        </div>
+        <button class="pwa-btn" id="btn-install" onclick="installPWA()">[ TIZIMNI QURILMAGA O'RNATISH ]</button>
+    </div>
+
+    <div id="lockdown-screen" class="screen hidden">
+        <div class="overlay-title">TIZIM BLOKLANDI</div>
+        <div class="overlay-sub">Xavfsizlik protokoli ishga tushdi. Blokni ochish uchun tenglamani yeching:</div>
+        
+        <div class="math-box">
+            <div class="math-q" id="math-q">45 + 12 = ?</div>
+            <div class="math-ans" id="math-ans">_</div>
+        </div>
+
+        <div class="numpad">
+            <button class="num-btn" onclick="typeNumpad(1)">1</button>
+            <button class="num-btn" onclick="typeNumpad(2)">2</button>
+            <button class="num-btn" onclick="typeNumpad(3)">3</button>
+            <button class="num-btn" onclick="typeNumpad(4)">4</button>
+            <button class="num-btn" onclick="typeNumpad(5)">5</button>
+            <button class="num-btn" onclick="typeNumpad(6)">6</button>
+            <button class="num-btn" onclick="typeNumpad(7)">7</button>
+            <button class="num-btn" onclick="typeNumpad(8)">8</button>
+            <button class="num-btn" onclick="typeNumpad(9)">9</button>
+            <button class="num-btn" style="font-size:0.9rem;" onclick="delNumpad()">DEL</button>
+            <button class="num-btn" onclick="typeNumpad(0)">0</button>
+            <button class="num-btn" style="font-size:0.9rem;" onclick="checkMath()">OK</button>
+        </div>
+    </div>
+
+    <div id="gameover-screen" class="screen hidden">
+        <div class="overlay-title">SEANS YAKUNLANDI</div>
+        <div class="overlay-sub" style="font-size: 1.2rem; color: #fff; margin-bottom: 40px;">YAKUNIY HISOB: <span id="final-score" style="font-weight: 700;">0</span></div>
+        <button class="glass-btn" onclick="resetToLogin()" style="width: 250px;">YANGI SEANS BOSHLASH</button>
+    </div>
+
+    <div id="game-ui">
+        <div class="hud-header">
+            <div class="hud-item"><span class="hud-label">DARAJA</span><span class="hud-val" id="lvl-display">01</span></div>
+            <div class="hud-item"><span class="hud-label">XATOLAR</span><span class="hud-val" id="mistake-display">00 / 10</span></div>
+            <div class="hud-item"><span class="hud-label">HISOB</span><span class="hud-val" id="score-display">00000</span></div>
+        </div>
+
+        <div id="board-wrapper">
+            <div id="grid"></div>
+            <svg id="svg-layer"></svg>
+            
+            <div id="levelup-screen" class="glass-overlay">
+                <div class="overlay-title">DARAJA TOZALANDI</div>
+                <div class="overlay-sub" style="margin-bottom: 15px;">KEYINGI QATLAM YUKLANMOQDA...</div>
+                <div class="load-bar-wrap"><div class="load-bar" id="load-bar"></div></div>
+            </div>
+        </div>
+
+        <div class="hud-footer">
+            <div class="hud-item" style="align-items: flex-start;">
+                <span class="hud-label">OPERATOR</span>
+                <span class="hud-val" id="user-display" style="font-size: 0.9rem; font-weight: 500;">Mehmon</span>
+            </div>
+            <div class="hud-item"><span class="hud-label">KOMBO</span><span class="hud-val" id="combo-display">x1</span></div>
+            <button class="btn-shuffle" onclick="handleShuffle()">ARALASHTIRISH -100</button>
+        </div>
+    </div>
+
+    <script>
+        // PWA Setup
+        let deferredPrompt;
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault(); deferredPrompt = e;
+            document.getElementById('btn-install').style.display = 'block';
+        });
+        function installPWA() {
+            if (deferredPrompt) {
+                deferredPrompt.prompt();
+                deferredPrompt.userChoice.then(() => {
+                    document.getElementById('btn-install').style.display = 'none';
+                    deferredPrompt = null;
+                });
+            }
+        }
+        if ('serviceWorker' in navigator) {
+            const swCode = `self.addEventListener('fetch', (e) => { e.respondWith(fetch(e.request).catch(() => new Response('Oflayn'))); });`;
+            const blob = new Blob([swCode], { type: 'application/javascript' });
+            navigator.serviceWorker.register(URL.createObjectURL(blob)).catch(()=>{});
+        }
+
+        // Soft & diverse emojis
+        const EMOJI_DB = [
+            "🤍","🖤","🔘","⚪","⚫","❕","❔","💭","🔲","🔳","🏁","🏴","🏳️","👁️‍🗨️","☁️",
+            "🍎","🍒","🍓","🍉","🍊","🍋","🍌","🍏","🍐","🍑","🍔","🍕","🍟","🌭","🍿",
+            "🚗","🚕","🚙","🚌","🚓","🚑","🚒","🚐","🚚","🚜","⚽","🏀","🏈","⚾","🎾",
+            "😀","😂","🥰","😎","🤔","😴","😷","🤠","👻","👽","🤖","😺","🐶","🦊","🐻",
+            "🌟","⭐","✨","💫","🪐","🌍","🌙","☀️","🌈","💧","🔥","⚡","❄️","🌊","🌪️"
+        ];
+
+        let gameState = { level: 1, score: 0, mistakes: 0, rows: 0, cols: 0, grid: [], playerName: "", isLocked: false, mathTask: null };
+        let combo = 1; let comboTimeout; let isProcessing = false; let typedAnswer = "";
+
+        // DOM Elements
+        const els = {
+            grid: document.getElementById('grid'), svg: document.getElementById('svg-layer'),
+            lvl: document.getElementById('lvl-display'), score: document.getElementById('score-display'),
+            combo: document.getElementById('combo-display'), mistake: document.getElementById('mistake-display'),
+            login: document.getElementById('login-screen'), locked: document.getElementById('lockdown-screen'),
+            gameUI: document.getElementById('game-ui'), levelup: document.getElementById('levelup-screen'),
+            gameover: document.getElementById('gameover-screen'), loadBar: document.getElementById('load-bar'),
+            btnCont: document.getElementById('btn-continue'), nameInp: document.getElementById('player-name'),
+            userDisp: document.getElementById('user-display'), finalScore: document.getElementById('final-score'),
+            boardWrap: document.getElementById('board-wrapper'), mathQ: document.getElementById('math-q'), mathAns: document.getElementById('math-ans')
+        };
+
+        // Init
+        window.onload = () => {
+            const saved = localStorage.getItem('xoleric_pure');
+            if (saved) {
+                const data = JSON.parse(saved);
+                if(data.isLocked) { gameState = data; showLockdown(); }
+                else { els.btnCont.style.display = 'block'; els.nameInp.value = data.playerName; }
+            }
+        };
+
+        function saveGame() { localStorage.setItem('xoleric_pure', JSON.stringify(gameState)); }
+        function clearSave() { localStorage.removeItem('xoleric_pure'); els.btnCont.style.display = 'none'; }
+
+        // Start / Continue
+        window.startNewGame = function() {
+            gameState.playerName = els.nameInp.value.trim() || "Foydalanuvchi";
+            gameState.level = 1; gameState.score = 0; gameState.mistakes = 0; gameState.isLocked = false;
+            combo = 1; transitionToGame(); setupLevel();
+        };
+
+        window.continueGame = function() {
+            const saved = JSON.parse(localStorage.getItem('xoleric_pure'));
+            if(saved && !saved.isLocked) {
+                gameState = saved; gameState.selected = null; isProcessing = false;
+                transitionToGame(); renderGrid(); updateStats();
+            }
+        };
+
+        function transitionToGame() {
+            els.login.classList.add('hidden');
+            els.userDisp.innerText = gameState.playerName;
+            setTimeout(() => { els.gameUI.classList.add('active'); }, 300);
+        }
+
+        function pad(num, size) { let s = num+""; while (s.length < size) s = "0" + s; return s; }
+        
+        function updateStats() {
+            els.lvl.innerText = pad(gameState.level, 2);
+            els.score.innerText = pad(gameState.score, 5);
+            els.mistake.innerText = `${pad(gameState.mistakes, 2)} / 10`;
+            els.combo.innerText = `x${combo}`;
+            
+            if(gameState.mistakes >= 8) els.mistake.classList.add('alert-blink');
+            else els.mistake.classList.remove('alert-blink');
+        }
+
+        // Level Logic
+        function setupLevel() {
+            let baseRows = 8; let baseCols = window.innerWidth > 600 ? 10 : 6;
+            gameState.rows = Math.min(baseRows + Math.floor(gameState.level), 14);
+            gameState.cols = Math.min(baseCols + Math.floor((gameState.level - 1) / 2), 10);
+            if ((gameState.rows * gameState.cols) % 2 !== 0) gameState.rows++;
+
+            generateData(); renderGrid(); updateStats(); saveGame();
+        }
+
+        function generateData() {
+            const total = gameState.rows * gameState.cols;
+            let shuffledDB = [...EMOJI_DB].sort(() => Math.random() - 0.5);
+            let pool = [];
+            for (let i = 0; i < total / 2; i++) pool.push(shuffledDB[i % shuffledDB.length]);
+            let items = [...pool, ...pool].sort(() => Math.random() - 0.5);
+            gameState.grid = Array.from({length: gameState.rows + 2}, () => new Array(gameState.cols + 2).fill(null));
+            let idx = 0;
+            for (let r = 1; r <= gameState.rows; r++) { for (let c = 1; c <= gameState.cols; c++) gameState.grid[r][c] = items[idx++]; }
+        }
+
+        function renderGrid() {
+            els.grid.style.gridTemplateColumns = `repeat(${gameState.cols}, 1fr)`;
+            els.grid.style.gridTemplateRows = `repeat(${gameState.rows}, 1fr)`;
+            els.grid.innerHTML = '';
+            for (let r = 1; r <= gameState.rows; r++) {
+                for (let c = 1; c <= gameState.cols; c++) {
+                    const tile = document.createElement('div'); tile.className = 'tile';
+                    const val = gameState.grid[r][c];
+                    if (val) {
+                        tile.innerText = val; tile.style.fontSize = `min(8vw, 4vh, 32px)`;
+                        tile.onclick = () => handleTileClick(r, c, tile);
+                    } else { tile.classList.add('matched'); }
+                    tile.id = `t-${r}-${c}`; els.grid.appendChild(tile);
+                }
+            }
+            els.svg.innerHTML = '';
+        }
+
+        // Interaction
+        function handleTileClick(r, c, el) {
+            if (isProcessing) return;
+            if (gameState.selected) {
+                const {r: sr, c: sc} = gameState.selected; const prevEl = document.getElementById(`t-${sr}-${sc}`);
+                if (sr === r && sc === c) { el.classList.remove('selected'); gameState.selected = null; return; }
+                
+                if (gameState.grid[r][c] === gameState.grid[sr][sc]) {
+                    const path = findLink(sr, sc, r, c);
+                    if (path) { isProcessing = true; executeMatch(gameState.selected, {r, c}, path); return; } 
+                    else { registerMistake(el, prevEl); }
+                } else { registerMistake(el, prevEl); }
+                
+                prevEl.classList.remove('selected'); gameState.selected = null; 
+            } else { gameState.selected = {r, c}; el.classList.add('selected'); }
+        }
+
+        function registerMistake(t1, t2) {
+            gameState.mistakes++; updateStats();
+            t1.classList.add('shake-err'); if(t2) t2.classList.add('shake-err');
+            setTimeout(() => { t1.classList.remove('shake-err'); if(t2) t2.classList.remove('shake-err'); }, 300);
+            combo = 1; updateStats(); saveGame();
+            if(gameState.mistakes >= 10) setTimeout(triggerLockdown, 400);
+        }
+
+        // BFS Pathfinding
+        function findLink(r1, c1, r2, c2) {
+            const queue = [{r: r1, c: c1, dir: -1, turns: 0, path: [[r1, c1]]}]; const visited = new Set();
+            while (queue.length > 0) {
+                const curr = queue.shift();
+                if (curr.turns > 2) continue;
+                if (curr.r === r2 && curr.c === c2) return curr.path;
+                const dirs = [[-1,0], [1,0], [0,-1], [0,1]];
+                for (let i = 0; i < 4; i++) {
+                    const nr = curr.r + dirs[i][0]; const nc = curr.c + dirs[i][1];
+                    if (nr >= 0 && nr < gameState.rows + 2 && nc >= 0 && nc < gameState.cols + 2) {
+                        if (gameState.grid[nr][nc] === null || (nr === r2 && nc === c2)) {
+                            const nt = (curr.dir !== -1 && curr.dir !== i) ? curr.turns + 1 : curr.turns;
+                            const key = `${nr},${nc},${i},${nt}`;
+                            if (!visited.has(key)) { visited.add(key); queue.push({r: nr, c: nc, dir: i, turns: nt, path: [...curr.path, [nr, nc]]}); }
+                        }
+                    }
+                }
+            } return null;
+        }
+
+        function executeMatch(p1, p2, path) {
+            drawPath(path); clearTimeout(comboTimeout);
+            let earnedScore = 150 * combo; gameState.score += earnedScore;
+            showFloatingScore(`+${earnedScore}`, p2.r, p2.c);
+            combo++; updateStats();
+            comboTimeout = setTimeout(() => { combo = 1; updateStats(); }, 3000); 
+
+            setTimeout(() => {
+                gameState.grid[p1.r][p1.c] = null; gameState.grid[p2.r][p2.c] = null;
+                const t1 = document.getElementById(`t-${p1.r}-${p1.c}`); const t2 = document.getElementById(`t-${p2.r}-${p2.c}`);
+                t1.classList.remove('selected'); t2.classList.remove('selected');
+                t1.classList.add('matched'); t2.classList.add('matched');
+                saveGame(); setTimeout(() => { els.svg.innerHTML = ''; }, 150);
+                gameState.selected = null; isProcessing = false; checkWin();
+            }, 150);
+        }
+
+        function showFloatingScore(text, r, c) {
+            const tile = document.getElementById(`t-${r}-${c}`); if(!tile) return;
+            const rect = tile.getBoundingClientRect(); const wrapperRect = els.boardWrap.getBoundingClientRect();
+            const pop = document.createElement('div'); pop.className = 'float-score'; pop.innerText = text;
+            pop.style.left = `${rect.left - wrapperRect.left + (rect.width/2) - 15}px`; pop.style.top = `${rect.top - wrapperRect.top}px`;
+            els.boardWrap.appendChild(pop); setTimeout(() => pop.remove(), 800);
+        }
+
+        function drawPath(path) {
+            const wrapperRect = els.svg.getBoundingClientRect(); const gridRect = els.grid.getBoundingClientRect();
+            const cellW = gridRect.width / gameState.cols; const cellH = gridRect.height / gameState.rows;
+            const offsetX = gridRect.left - wrapperRect.left; const offsetY = gridRect.top - wrapperRect.top;
+            const points = path.map(p => `${offsetX + (p[1] - 0.5) * cellW},${offsetY + (p[0] - 0.5) * cellH}`).join(' ');
+            const polyline = document.createElementNS("http://www.w3.org/2000/svg", "polyline");
+            polyline.setAttribute("points", points); polyline.setAttribute("class", "soft-line");
+            els.svg.appendChild(polyline);
+        }
+
+        // Check Win & Shuffle
+        function checkWin() {
+            if (!gameState.grid.flat().some(cell => cell !== null)) {
+                gameState.level++; saveGame(); 
+                els.levelup.classList.add('show');
+                els.loadBar.style.width = '100%';
+                setTimeout(() => { 
+                    els.levelup.classList.remove('show'); 
+                    els.loadBar.style.width = '0%';
+                    setupLevel(); 
+                }, 1800);
+            }
+        }
+
+        window.handleShuffle = function() {
+            if(isProcessing) return;
+            let active = [];
+            for(let r=1; r<=gameState.rows; r++) { for(let c=1; c<=gameState.cols; c++) if(gameState.grid[r][c] !== null) active.push(gameState.grid[r][c]); }
+            active.sort(() => Math.random() - 0.5);
+            let idx = 0;
+            for(let r=1; r<=gameState.rows; r++) { for(let c=1; c<=gameState.cols; c++) if(gameState.grid[r][c] !== null) gameState.grid[r][c] = active[idx++]; }
+            gameState.score = Math.max(0, gameState.score - 100); combo = 1; updateStats(); saveGame(); renderGrid(); gameState.selected = null;
+        };
+
+        window.resetToLogin = function() {
+            els.gameover.classList.add('hidden');
+            els.login.classList.remove('hidden');
+            els.nameInp.value = "";
+        };
+
+        // --- MATH LOCKDOWN ---
+        function triggerLockdown() {
+            gameState.isLocked = true; 
+            const ops = ['+', '-', '*']; const op = ops[Math.floor(Math.random() * ops.length)];
+            let a, b, ans;
+            if (op === '+') { a = Math.floor(Math.random()*50)+10; b = Math.floor(Math.random()*50)+10; ans = a+b; }
+            else if (op === '-') { a = Math.floor(Math.random()*50)+30; b = Math.floor(Math.random()*29)+1; ans = a-b; }
+            else { a = Math.floor(Math.random()*9)+2; b = Math.floor(Math.random()*9)+2; ans = a*b; }
+            gameState.mathTask = { q: `${a} ${op} ${b} = ?`, a: ans };
+            saveGame(); showLockdown();
+        }
+
+        function showLockdown() {
+            els.gameUI.classList.remove('active');
+            els.login.classList.add('hidden'); els.locked.classList.remove('hidden');
+            els.mathQ.innerText = gameState.mathTask.q; typedAnswer = ""; updateMath();
+        }
+
+        window.typeNumpad = function(n) { if(typedAnswer.length < 5) { typedAnswer += n; updateMath(); } };
+        window.delNumpad = function() { typedAnswer = typedAnswer.slice(0, -1); updateMath(); };
+        function updateMath() { els.mathAns.innerText = typedAnswer || "_"; }
+
+        window.checkMath = function() {
+            if (parseInt(typedAnswer) === gameState.mathTask.a) {
+                // RUXSAT BERILDI
+                els.mathAns.innerText = "RUXSAT BERILDI";
+                setTimeout(() => {
+                    gameState.isLocked = false; gameState.mathTask = null; gameState.mistakes = 0; gameState.score = 0; gameState.level = 1;
+                    saveGame(); els.locked.classList.add('hidden'); els.gameUI.classList.add('active'); setupLevel();
+                }, 1000);
+            } else {
+                els.mathAns.innerText = "XATO";
+                setTimeout(() => { typedAnswer = ""; updateMath(); }, 500);
+            }
+        };
+    </script>
+</body>
+</html>
