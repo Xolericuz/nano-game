@@ -1,0 +1,490 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="theme-color" content="#000000">
+    <title>XOLƎRIƆ: MONO</title>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Inter:wght@300;500;800&display=swap" rel="stylesheet">
+    
+    <link rel="manifest" href="data:application/manifest+json;charset=utf-8,%7B%22name%22%3A%22XOL%C6%8ERI%C6%86%22%2C%22short_name%22%3A%22XOL%C6%8ERI%C6%86%22%2C%22start_url%22%3A%22.%22%2C%22display%22%3A%22standalone%22%2C%22background_color%22%3A%22%23000000%22%2C%22theme_color%22%3A%22%23000000%22%2C%22icons%22%3A%5B%7B%22src%22%3A%22data%3Aimage%2Fpng%3Bbase64%2CiVBORw0KGgoAAAANSUhEUgAAAEAAAABACAQAAAAAYLlVAAAAPElEQVR42u3OMQEAAAwCoPk3tY/mAwkg6yYqKioqKioqKioqKioqKioqKioqKioqKioqKioqKioqKio6Wwd7gAERjPXYAAAAAElFTkSuQmCC%22%2C%22sizes%22%3A%2264x64%22%2C%22type%22%3A%22image%2Fpng%22%7D%5D%7D">
+
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; -webkit-tap-highlight-color: transparent; }
+        :root {
+            --bg: #000000;
+            --white-glass-light: rgba(255, 255, 255, 0.05);
+            --white-glass-mid: rgba(255, 255, 255, 0.15);
+            --white-glass-strong: rgba(255, 255, 255, 0.25);
+            --white-border: rgba(255, 255, 255, 0.2);
+            --white-glow: 0 0 20px rgba(255, 255, 255, 0.4);
+            --text-main: #ffffff;
+            --text-dim: #a0a0a0;
+        }
+        body {
+            background-color: var(--bg); color: var(--text-main); font-family: 'Inter', sans-serif;
+            width: 100vw; height: 100dvh; overflow: hidden; display: flex; flex-direction: column; position: fixed;
+        }
+
+        /* Screens & Overlays */
+        .screen-overlay {
+            position: fixed; inset: 0; display: flex; flex-direction: column;
+            justify-content: center; align-items: center; z-index: 1000;
+            background: var(--bg);
+            transition: 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .screen-overlay.hidden { opacity: 0; transform: scale(1.03); pointer-events: none; }
+        
+        .logo {
+            font-family: 'Orbitron', sans-serif; font-size: clamp(3.5rem, 12vw, 5rem);
+            font-weight: 900; letter-spacing: 12px; margin-bottom: 40px; color: #fff;
+            text-shadow: var(--white-glow);
+        }
+        
+        .input-group { display: flex; flex-direction: column; gap: 15px; width: 85%; max-width: 340px; }
+        
+        input.text-input {
+            background: var(--white-glass-light); border: 1px solid var(--white-border);
+            padding: 20px; border-radius: 18px; color: white; font-size: 1.1rem;
+            text-align: center; outline: none; transition: 0.3s; font-family: 'Inter', sans-serif;
+            text-transform: uppercase; letter-spacing: 3px; backdrop-filter: blur(10px);
+        }
+        input.text-input:focus { background: var(--white-glass-mid); border-color: #fff; box-shadow: var(--white-glow); }
+        
+        /* White Transparent Buttons */
+        .btn {
+            background: var(--white-glass-mid); color: #fff; padding: 20px; border-radius: 18px;
+            font-weight: 800; font-size: 1rem; border: 1px solid var(--white-border); cursor: pointer;
+            text-transform: uppercase; letter-spacing: 2px; transition: all 0.3s ease;
+            backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+        }
+        .btn:active { transform: scale(0.95); background: var(--white-glass-strong); border-color: #fff; }
+        #btn-continue, #btn-install { display: none; }
+
+        /* Game UI */
+        #game-ui {
+            flex: 1; display: flex; flex-direction: column; opacity: 0;
+            transition: opacity 0.8s ease 0.2s; z-index: 10; height: 100%; padding-top: env(safe-area-inset-top, 10px);
+        }
+        
+        #board-wrapper {
+            position: relative; flex: 1; display: flex;
+            justify-content: center; align-items: center; padding: 10px;
+        }
+        #grid { display: grid; gap: 8px; z-index: 20; max-width: 100%; max-height: 100%; }
+        
+        .tile {
+            background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.05);
+            border-radius: 50%; display: flex; justify-content: center; align-items: center;
+            cursor: pointer; transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            aspect-ratio: 1/1; 
+        }
+        .tile:active { transform: scale(0.85); background: var(--white-glass-light); }
+        .tile.selected {
+            background: var(--white-glass-strong); border: 1px solid #fff;
+            transform: scale(1.1); box-shadow: var(--white-glow); z-index: 30;
+        }
+        .tile.matched { opacity: 0; transform: scale(0); pointer-events: none; transition: 0.3s ease-out; }
+        
+        /* Mistake Shake (Monochrome) */
+        @keyframes errorShake {
+            0% { transform: translateX(0); border-color: #fff; background: #fff; }
+            25% { transform: translateX(-6px); }
+            50% { transform: translateX(6px); }
+            75% { transform: translateX(-6px); }
+            100% { transform: translateX(0); border-color: rgba(255,255,255,0.05); background: rgba(255,255,255,0.02); }
+        }
+        .error-shake { animation: errorShake 0.4s ease; }
+
+        /* Dashboard (Bottom Island) */
+        .dashboard {
+            background: var(--white-glass-light); backdrop-filter: blur(24px); -webkit-backdrop-filter: blur(24px);
+            border: 1px solid var(--white-border); border-radius: 24px;
+            margin: 10px 15px 25px 15px; padding: 15px 24px;
+            display: flex; justify-content: space-between; align-items: center;
+            flex-shrink: 0; z-index: 50;
+        }
+        .stats-group { display: flex; gap: 20px; align-items: center; flex-wrap: wrap;}
+        .stat-item { display: flex; flex-direction: column; gap: 4px; }
+        .stat-label { font-size: 0.65rem; color: var(--text-dim); text-transform: uppercase; font-weight: 800; letter-spacing: 1px; }
+        .stat-val { font-size: 1.2rem; font-weight: 900; color: #fff; font-family: 'Orbitron', sans-serif;}
+        
+        #mistake-display { transition: color 0.3s; }
+        .alert-text { color: #fff; text-shadow: var(--white-glow); animation: pulse 0.5s infinite alternate; }
+        @keyframes pulse { from { transform: scale(1); } to { transform: scale(1.1); } }
+
+        /* SVG Connection Line */
+        #svg-layer { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 100; }
+        .connection-line {
+            fill: none; stroke: #fff; stroke-width: 4;
+            stroke-linecap: round; stroke-linejoin: round; filter: drop-shadow(0 0 12px #fff);
+            stroke-dasharray: 2000; stroke-dashoffset: 2000;
+            animation: drawLine 0.25s ease-out forwards;
+        }
+        @keyframes drawLine { to { stroke-dashoffset: 0; } }
+
+        /* Floating Score */
+        .floating-score {
+            position: absolute; color: #fff; font-weight: 900; font-size: 1.5rem;
+            text-shadow: var(--white-glow); pointer-events: none; z-index: 200;
+            animation: floatUp 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; font-family: 'Orbitron', sans-serif;
+        }
+        @keyframes floatUp {
+            0% { opacity: 1; transform: translateY(0) scale(0.8); }
+            100% { opacity: 0; transform: translateY(-60px) scale(1.2); }
+        }
+
+        /* Pure White Math Lockdown Screen */
+        .math-box {
+            background: var(--white-glass-light); border: 1px solid var(--white-border); border-radius: 24px;
+            padding: 30px 20px; text-align: center; margin-bottom: 30px; 
+            width: 85%; max-width: 340px; backdrop-filter: blur(15px);
+        }
+        .math-q { font-size: 2.2rem; font-family: 'Orbitron', sans-serif; font-weight: 900; color: #fff; letter-spacing: 4px; }
+        .math-ans {
+            background: rgba(0,0,0,0.5); border: 1px solid var(--white-border); padding: 15px; margin-top: 20px;
+            border-radius: 16px; font-size: 1.8rem; font-family: 'Orbitron', sans-serif; color: #fff;
+            min-height: 65px; display: flex; justify-content: center; align-items: center; letter-spacing: 6px;
+        }
+        
+        .numpad {
+            display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; width: 85%; max-width: 340px;
+        }
+        .num-btn {
+            background: var(--white-glass-light); border: 1px solid var(--white-border);
+            color: #fff; font-size: 1.5rem; padding: 20px; border-radius: 18px; font-family: 'Orbitron', sans-serif;
+            font-weight: 900; cursor: pointer; transition: 0.2s; backdrop-filter: blur(10px);
+        }
+        .num-btn:active { background: var(--white-glass-strong); transform: scale(0.92); border-color: #fff; }
+        .num-btn.del { font-size: 1.2rem; }
+        .num-btn.ok { background: var(--white-glass-mid); color: #fff; border-color: #fff; font-size: 1.2rem; box-shadow: var(--white-glow);}
+
+        /* Minimalist Overlay */
+        #msg-overlay {
+            position: absolute; inset: 0; background: rgba(0,0,0,0.85); backdrop-filter: blur(10px);
+            z-index: 500; display: flex; justify-content: center; align-items: center; flex-direction: column;
+            opacity: 0; pointer-events: none; transition: 0.5s;
+        }
+        #msg-overlay.show { opacity: 1; }
+        .msg-title { font-size: 3rem; color: #fff; font-weight: 900; letter-spacing: 10px; font-family: 'Orbitron', sans-serif; text-shadow: var(--white-glow); }
+    </style>
+</head>
+<body>
+
+    <div id="login-screen" class="screen-overlay">
+        <div class="logo">XOL<span style="display:inline-block; transform:scaleX(-1);">E</span>RI<span style="display:inline-block; transform:scaleX(-1);">C</span></div>
+        <div class="input-group">
+            <input type="text" id="player-name" class="text-input" placeholder="ID KODINGIZ" autocomplete="off" spellcheck="false">
+            <button class="btn" onclick="startNewGame()">Tizimga Kirish</button>
+            <button class="btn" id="btn-continue" onclick="continueGame()">Davom etish</button>
+            <button class="btn" id="btn-install" onclick="installPWA()">📲 O'rnatish</button>
+        </div>
+    </div>
+
+    <div id="locked-screen" class="screen-overlay hidden">
+        <div class="logo" style="font-size: 2.2rem; margin-bottom: 10px; letter-spacing: 6px;">TIZIM BLOKLANDI</div>
+        <p style="color: var(--text-dim); margin-bottom: 30px; font-weight: 500; text-align:center; max-width: 80%; font-size: 0.9rem;">RUXSAT UCHUN TENGALAMANI YECHING</p>
+        
+        <div class="math-box">
+            <div class="math-q" id="math-question">2 + 2 = ?</div>
+            <div class="math-ans" id="math-answer-display">_</div>
+        </div>
+
+        <div class="numpad">
+            <button class="num-btn" onclick="typeNum(1)">1</button>
+            <button class="num-btn" onclick="typeNum(2)">2</button>
+            <button class="num-btn" onclick="typeNum(3)">3</button>
+            <button class="num-btn" onclick="typeNum(4)">4</button>
+            <button class="num-btn" onclick="typeNum(5)">5</button>
+            <button class="num-btn" onclick="typeNum(6)">6</button>
+            <button class="num-btn" onclick="typeNum(7)">7</button>
+            <button class="num-btn" onclick="typeNum(8)">8</button>
+            <button class="num-btn" onclick="typeNum(9)">9</button>
+            <button class="num-btn del" onclick="delNum()">DEL</button>
+            <button class="num-btn" onclick="typeNum(0)">0</button>
+            <button class="num-btn ok" onclick="checkMath()">OK</button>
+        </div>
+    </div>
+
+    <div id="game-ui">
+        <div id="board-wrapper">
+            <div id="grid"></div>
+            <svg id="svg-layer"></svg>
+            <div id="msg-overlay">
+                <div class="msg-title">YANGI DARAJA</div>
+            </div>
+        </div>
+
+        <div class="dashboard">
+            <div class="stats-group">
+                <div class="stat-item">
+                    <span class="stat-label">Daraja</span>
+                    <span class="stat-val" id="lvl-display">1</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">Hisob</span>
+                    <span class="stat-val" id="score-display">0</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">Xato</span>
+                    <span class="stat-val" id="mistake-display">0/10</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">Kombo</span>
+                    <span class="stat-val" id="combo-display">x1</span>
+                </div>
+            </div>
+            <button class="btn" style="padding: 12px 18px; font-size: 0.75rem; border-radius: 14px; border: none; font-weight: 800;" onclick="handleShuffle()">ARALASH</button>
+        </div>
+    </div>
+
+    <script>
+        // PWA Installation & Offline Logic
+        let deferredPrompt;
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault(); deferredPrompt = e;
+            document.getElementById('btn-install').style.display = 'block';
+        });
+        function installPWA() {
+            if (deferredPrompt) {
+                deferredPrompt.prompt();
+                deferredPrompt.userChoice.then((choiceResult) => {
+                    if (choiceResult.outcome === 'accepted') document.getElementById('btn-install').style.display = 'none';
+                    deferredPrompt = null;
+                });
+            }
+        }
+        if ('serviceWorker' in navigator) {
+            const swCode = `self.addEventListener('fetch', (e) => { e.respondWith(fetch(e.request).catch(() => new Response('Oflayn'))); });`;
+            const blob = new Blob([swCode], { type: 'application/javascript' });
+            navigator.serviceWorker.register(URL.createObjectURL(blob)).catch(()=>{});
+        }
+
+        // Emoji Database (Massive and diverse for challenge)
+        const EMOJI_DB = [
+            "🍎","🍅","🍒","🍓","🍉","🍊","🍋","🍌","🍏","🍐","🍑","🥭","🍍","🥥","🥝",
+            "🍔","🥪","🌭","🍕","🍟","🌮","🌯","🥩","🍗","🍖","🍘","🍙","🍚","🍛","🍜",
+            "🚗","🚕","🚙","🚌","🚎","🏎️","🚓","🚑","🚒","🚐","🛻","🚚","🚛","🚜","🛵",
+            "⚽","🏀","🏈","⚾","🥎","🎾","🏐","🏉","🎱","🪀","🏓","🏸","🏒","🏑","🥍",
+            "😀","😃","😄","😁","😆","😅","🤣","😂","🙂","🙃","😉","😊","😇","🥰","😍",
+            "🐶","🐱","🐭","🐹","🐰","🦊","🐻","🐼","🐻‍❄️","🐨","🐯","🦁","🐮","🐷","🐸",
+            "❤️","🤍","🖤","🤍","🖤","🤍","🖤","🤍","🖤","🤍","🖤","🤍","🖤","🤍","🖤", // Monoxromga mos urg'u
+            "🌟","⭐","✨","💫","🌠","🪐","🌍","🌎","🌏","🌑","🌒","🌓","🌔","🌕","🌖",
+            "⌚","📱","💻","⌨️","🖥️","🖨️","🖱️","🖲️","🕹️","🗜️","💽","💾","💿","📀","📼"
+        ];
+
+        let gameState = { level: 1, score: 0, mistakes: 0, rows: 0, cols: 0, grid: [], playerName: "GUEST", isLocked: false, mathTask: null };
+        let combo = 1; let comboTimeout; let isProcessing = false; let typedAnswer = "";
+
+        const els = {
+            grid: document.getElementById('grid'), svg: document.getElementById('svg-layer'),
+            lvl: document.getElementById('lvl-display'), score: document.getElementById('score-display'),
+            combo: document.getElementById('combo-display'), mistake: document.getElementById('mistake-display'),
+            login: document.getElementById('login-screen'), locked: document.getElementById('locked-screen'),
+            gameUI: document.getElementById('game-ui'), overlay: document.getElementById('msg-overlay'),
+            btnCont: document.getElementById('btn-continue'), nameInp: document.getElementById('player-name'),
+            boardWrap: document.getElementById('board-wrapper'), mathQ: document.getElementById('math-question'),
+            mathAns: document.getElementById('math-answer-display')
+        };
+
+        window.onload = () => {
+            const saved = localStorage.getItem('xoleric_mono');
+            if (saved) { 
+                const data = JSON.parse(saved);
+                if(data.isLocked) { gameState = data; showLockedScreen(); } 
+                else { els.btnCont.style.display = 'block'; els.nameInp.value = data.playerName; }
+            }
+        };
+
+        function saveGame() { localStorage.setItem('xoleric_mono', JSON.stringify(gameState)); }
+
+        window.startNewGame = function() {
+            gameState.playerName = els.nameInp.value.trim().toUpperCase() || "USER";
+            gameState.level = 1; gameState.score = 0; gameState.mistakes = 0; gameState.isLocked = false;
+            combo = 1; els.login.classList.add('hidden'); els.gameUI.style.opacity = '1';
+            setupLevel();
+        };
+
+        window.continueGame = function() {
+            const saved = JSON.parse(localStorage.getItem('xoleric_mono'));
+            if(saved && !saved.isLocked) { 
+                gameState = saved; gameState.selected = null; isProcessing = false; 
+                els.login.classList.add('hidden'); els.gameUI.style.opacity = '1';
+                renderGrid(); updateStats();
+            }
+        };
+
+        // --- Math Override ---
+        function triggerLockdown() {
+            gameState.isLocked = true; gameState.mathTask = generateMathProblem(); saveGame(); showLockedScreen();
+        }
+
+        function generateMathProblem() {
+            const ops = ['+', '-', '*']; const op = ops[Math.floor(Math.random() * ops.length)];
+            let a, b, ans;
+            if (op === '+') { a = Math.floor(Math.random()*80)+20; b = Math.floor(Math.random()*80)+20; ans = a+b; }
+            else if (op === '-') { a = Math.floor(Math.random()*80)+40; b = Math.floor(Math.random()*39)+1; ans = a-b; }
+            else { a = Math.floor(Math.random()*12)+3; b = Math.floor(Math.random()*12)+3; ans = a*b; }
+            return { q: `${a} ${op} ${b} = ?`, a: ans };
+        }
+
+        function showLockedScreen() {
+            els.gameUI.style.opacity = '0'; els.login.classList.add('hidden'); els.locked.classList.remove('hidden');
+            els.mathQ.innerText = gameState.mathTask.q; typedAnswer = ""; updateMathDisplay();
+        }
+
+        window.typeNum = function(n) { if(typedAnswer.length < 5) { typedAnswer += n; updateMathDisplay(); } };
+        window.delNum = function() { typedAnswer = typedAnswer.slice(0, -1); updateMathDisplay(); };
+        function updateMathDisplay() { els.mathAns.innerText = typedAnswer || "_"; }
+
+        window.checkMath = function() {
+            if (parseInt(typedAnswer) === gameState.mathTask.a) {
+                gameState.isLocked = false; gameState.mathTask = null; gameState.mistakes = 0; gameState.score = 0; gameState.level = 1;
+                saveGame(); els.locked.classList.add('hidden'); els.gameUI.style.opacity = '1'; setupLevel();
+            } else {
+                els.mathAns.style.background = '#fff'; els.mathAns.style.color = '#000'; els.mathAns.innerText = "XATO";
+                setTimeout(() => { typedAnswer = ""; updateMathDisplay(); els.mathAns.style.background = 'rgba(0,0,0,0.5)'; els.mathAns.style.color = '#fff'; }, 800);
+            }
+        };
+
+        // --- Core Logic ---
+        function updateStats() { 
+            els.lvl.innerText = gameState.level; els.score.innerText = gameState.score; 
+            els.mistake.innerText = `${gameState.mistakes}/10`; els.combo.innerText = `x${combo}`;
+            
+            if(gameState.mistakes >= 8) els.mistake.classList.add('alert-text'); else els.mistake.classList.remove('alert-text');
+            if(combo > 1) els.combo.classList.add('alert-text'); else els.combo.classList.remove('alert-text');
+        }
+
+        function registerMistake(t1, t2) {
+            gameState.mistakes++; updateStats();
+            t1.classList.add('error-shake'); if(t2) t2.classList.add('error-shake');
+            setTimeout(() => { t1.classList.remove('error-shake'); if(t2) t2.classList.remove('error-shake'); }, 400);
+            combo = 1; updateStats(); saveGame();
+            if(gameState.mistakes >= 10) setTimeout(triggerLockdown, 500);
+        }
+
+        function setupLevel() {
+            let baseRows = 8; let baseCols = window.innerWidth > 600 ? 10 : 6;
+            gameState.rows = Math.min(baseRows + Math.floor(gameState.level), 16);
+            gameState.cols = Math.min(baseCols + Math.floor((gameState.level - 1) / 2), 12);
+            if ((gameState.rows * gameState.cols) % 2 !== 0) gameState.rows++;
+            generateData(); renderGrid(); updateStats(); saveGame();
+        }
+
+        function generateData() {
+            const total = gameState.rows * gameState.cols;
+            let shuffledDB = [...EMOJI_DB].sort(() => Math.random() - 0.5);
+            let pool = [];
+            for (let i = 0; i < total / 2; i++) pool.push(shuffledDB[i % shuffledDB.length]);
+            let items = [...pool, ...pool].sort(() => Math.random() - 0.5);
+            gameState.grid = Array.from({length: gameState.rows + 2}, () => new Array(gameState.cols + 2).fill(null));
+            let idx = 0;
+            for (let r = 1; r <= gameState.rows; r++) { for (let c = 1; c <= gameState.cols; c++) gameState.grid[r][c] = items[idx++]; }
+        }
+
+        function renderGrid() {
+            els.grid.style.gridTemplateColumns = `repeat(${gameState.cols}, 1fr)`; els.grid.style.gridTemplateRows = `repeat(${gameState.rows}, 1fr)`;
+            els.grid.innerHTML = '';
+            for (let r = 1; r <= gameState.rows; r++) {
+                for (let c = 1; c <= gameState.cols; c++) {
+                    const tile = document.createElement('div'); tile.className = 'tile';
+                    const val = gameState.grid[r][c];
+                    if (val) {
+                        tile.innerText = val; tile.style.fontSize = `min(8vw, 4vh, 38px)`;
+                        tile.onclick = () => handleTileClick(r, c, tile);
+                    } else { tile.classList.add('matched'); }
+                    tile.id = `t-${r}-${c}`; els.grid.appendChild(tile);
+                }
+            }
+            els.svg.innerHTML = '';
+        }
+
+        function handleTileClick(r, c, el) {
+            if (isProcessing) return;
+            if (gameState.selected) {
+                const {r: sr, c: sc} = gameState.selected; const prevEl = document.getElementById(`t-${sr}-${sc}`);
+                if (sr === r && sc === c) { el.classList.remove('selected'); gameState.selected = null; return; }
+                if (gameState.grid[r][c] === gameState.grid[sr][sc]) {
+                    const path = findLink(sr, sc, r, c);
+                    if (path) { isProcessing = true; executeMatch(gameState.selected, {r, c}, path); return; } 
+                    else { registerMistake(el, prevEl); }
+                } else { registerMistake(el, prevEl); }
+                prevEl.classList.remove('selected'); gameState.selected = null; 
+            } else { gameState.selected = {r, c}; el.classList.add('selected'); }
+        }
+
+        function findLink(r1, c1, r2, c2) {
+            const queue = [{r: r1, c: c1, dir: -1, turns: 0, path: [[r1, c1]]}]; const visited = new Set();
+            while (queue.length > 0) {
+                const curr = queue.shift();
+                if (curr.turns > 2) continue;
+                if (curr.r === r2 && curr.c === c2) return curr.path;
+                const dirs = [[-1,0], [1,0], [0,-1], [0,1]];
+                for (let i = 0; i < 4; i++) {
+                    const nr = curr.r + dirs[i][0]; const nc = curr.c + dirs[i][1];
+                    if (nr >= 0 && nr < gameState.rows + 2 && nc >= 0 && nc < gameState.cols + 2) {
+                        if (gameState.grid[nr][nc] === null || (nr === r2 && nc === c2)) {
+                            const nt = (curr.dir !== -1 && curr.dir !== i) ? curr.turns + 1 : curr.turns;
+                            const key = `${nr},${nc},${i},${nt}`;
+                            if (!visited.has(key)) { visited.add(key); queue.push({r: nr, c: nc, dir: i, turns: nt, path: [...curr.path, [nr, nc]]}); }
+                        }
+                    }
+                }
+            } return null;
+        }
+
+        function executeMatch(p1, p2, path) {
+            drawPath(path); clearTimeout(comboTimeout);
+            let earnedScore = 150 * combo; gameState.score += earnedScore;
+            showFloatingScore(`+${earnedScore}`, p2.r, p2.c);
+            combo++; updateStats();
+            comboTimeout = setTimeout(() => { combo = 1; updateStats(); }, 3500); 
+
+            setTimeout(() => {
+                gameState.grid[p1.r][p1.c] = null; gameState.grid[p2.r][p2.c] = null;
+                const t1 = document.getElementById(`t-${p1.r}-${p1.c}`); const t2 = document.getElementById(`t-${p2.r}-${p2.c}`);
+                t1.classList.remove('selected'); t2.classList.remove('selected');
+                t1.classList.add('matched'); t2.classList.add('matched');
+                saveGame(); setTimeout(() => { els.svg.innerHTML = ''; }, 150);
+                gameState.selected = null; isProcessing = false; checkWin();
+            }, 150);
+        }
+
+        function showFloatingScore(text, r, c) {
+            const tile = document.getElementById(`t-${r}-${c}`); if(!tile) return;
+            const rect = tile.getBoundingClientRect(); const wrapperRect = els.boardWrap.getBoundingClientRect();
+            const pop = document.createElement('div'); pop.className = 'floating-score'; pop.innerText = text;
+            pop.style.left = `${rect.left - wrapperRect.left + (rect.width/4)}px`; pop.style.top = `${rect.top - wrapperRect.top}px`;
+            els.boardWrap.appendChild(pop); setTimeout(() => pop.remove(), 800);
+        }
+
+        function drawPath(path) {
+            const wrapperRect = els.svg.getBoundingClientRect(); const gridRect = els.grid.getBoundingClientRect();
+            const cellW = gridRect.width / gameState.cols; const cellH = gridRect.height / gameState.rows;
+            const offsetX = gridRect.left - wrapperRect.left; const offsetY = gridRect.top - wrapperRect.top;
+            const points = path.map(p => `${offsetX + (p[1] - 0.5) * cellW},${offsetY + (p[0] - 0.5) * cellH}`).join(' ');
+            const polyline = document.createElementNS("http://www.w3.org/2000/svg", "polyline");
+            polyline.setAttribute("points", points); polyline.setAttribute("class", "connection-line");
+            els.svg.appendChild(polyline);
+        }
+
+        function checkWin() {
+            if (!gameState.grid.flat().some(cell => cell !== null)) {
+                gameState.level++; saveGame(); els.overlay.classList.add('show');
+                setTimeout(() => { els.overlay.classList.remove('show'); setupLevel(); }, 1500);
+            }
+        }
+
+        window.handleShuffle = function() {
+            if(isProcessing) return;
+            let active = [];
+            for(let r=1; r<=gameState.rows; r++) { for(let c=1; c<=gameState.cols; c++) if(gameState.grid[r][c] !== null) active.push(gameState.grid[r][c]); }
+            active.sort(() => Math.random() - 0.5);
+            let idx = 0;
+            for(let r=1; r<=gameState.rows; r++) { for(let c=1; c<=gameState.cols; c++) if(gameState.grid[r][c] !== null) gameState.grid[r][c] = active[idx++]; }
+            gameState.score = Math.max(0, gameState.score - 100); combo = 1; updateStats(); saveGame(); renderGrid(); gameState.selected = null;
+        };
+    </script>
+</body>
+</html>
