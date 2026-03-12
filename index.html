@@ -1,0 +1,1002 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#000000">
+<title>XOLERIC </title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Outfit:wght@200;400;600&display=swap" rel="stylesheet">
+<style>
+:root {
+--bg: #000000;
+--glass: rgba(255, 255, 255, 0.03);
+--glass-border: rgba(255, 255, 255, 0.1);
+--accent: #ffffff;
+--neon-blue: #00f2ff;
+--neon-pink: #ff00ea;
+--danger: #ff2d55;
+--success: #00ff88;
+--font-main: 'Outfit', sans-serif;
+--font-tech: 'Orbitron', sans-serif;
+--safe-top: env(safe-area-inset-top);
+--safe-bottom: env(safe-area-inset-bottom);
+}
+    * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+        -webkit-tap-highlight-color: transparent;
+        user-select: none;
+    }
+
+    body, html {
+        width: 100%;
+        height: 100%;
+        background-color: var(--bg);
+        color: var(--accent);
+        font-family: var(--font-main);
+        overflow: hidden;
+        position: fixed;
+    }
+
+    #app {
+        width: 100vw;
+        height: 100dvh;
+        display: flex;
+        flex-direction: column;
+        position: relative;
+        background: radial-gradient(circle at 50% 50%, #0a0a0a 0%, #000000 100%);
+    }
+
+    /* --- BACKGROUND PARTICLES --- */
+    #particle-canvas {
+        position: absolute;
+        top: 0;
+        left: 0;
+        z-index: 1;
+        pointer-events: none;
+    }
+
+    /* --- UI OVERLAYS --- */
+    .screen {
+        position: absolute;
+        inset: 0;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        z-index: 100;
+        background: var(--bg);
+        transition: opacity 0.8s cubic-bezier(0.4, 0, 0.2, 1), transform 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+        padding: 2rem;
+    }
+
+    .screen.hidden {
+        opacity: 0;
+        pointer-events: none;
+        transform: scale(1.05);
+    }
+
+    .glass-panel {
+        background: var(--glass);
+        backdrop-filter: blur(20px);
+        border: 1px solid var(--glass-border);
+        border-radius: 24px;
+        padding: 2.5rem;
+        width: 100%;
+        max-width: 400px;
+        box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+        text-align: center;
+    }
+
+    /* --- TYPOGRAPHY --- */
+    .logo-text {
+        font-family: var(--font-tech);
+        font-weight: 900;
+        font-size: 2.2rem;
+        letter-spacing: 0.3rem;
+        margin-bottom: 0.5rem;
+        text-transform: uppercase;
+        background: linear-gradient(to right, #fff 0%, #666 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+    }
+
+    .version-tag {
+        font-family: var(--font-tech);
+        font-size: 0.7rem;
+        letter-spacing: 2px;
+        color: rgba(255,255,255,0.4);
+        margin-bottom: 2rem;
+    }
+
+    /* --- FORM ELEMENTS --- */
+    .input-wrapper {
+        position: relative;
+        margin-bottom: 1.5rem;
+    }
+
+    input {
+        width: 100%;
+        background: rgba(255,255,255,0.05);
+        border: 1px solid var(--glass-border);
+        border-radius: 12px;
+        padding: 1rem;
+        color: #fff;
+        font-family: var(--font-main);
+        font-size: 1rem;
+        text-align: center;
+        outline: none;
+        transition: border-color 0.3s;
+    }
+
+    input:focus {
+        border-color: rgba(255,255,255,0.4);
+    }
+
+    .btn {
+        width: 100%;
+        padding: 1.2rem;
+        border-radius: 12px;
+        border: none;
+        font-family: var(--font-tech);
+        font-weight: 700;
+        cursor: pointer;
+        transition: all 0.3s;
+        text-transform: uppercase;
+        letter-spacing: 2px;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .btn-primary {
+        background: #fff;
+        color: #000;
+    }
+
+    .btn-primary:active {
+        transform: scale(0.98);
+        background: #ccc;
+    }
+
+    /* --- GAME INTERFACE --- */
+    #game-ui {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        z-index: 10;
+        padding-top: var(--safe-top);
+        padding-bottom: var(--safe-bottom);
+    }
+
+    .top-spacer {
+        height: 15vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    /* --- GRID SYSTEM --- */
+    #grid-container {
+        flex: 1;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 10px;
+        perspective: 1000px;
+    }
+
+    #puzzle-grid {
+        display: grid;
+        gap: 8px;
+        transition: transform 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+
+    .tile {
+        aspect-ratio: 1;
+        background: var(--glass);
+        border: 1px solid var(--glass-border);
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.8rem;
+        cursor: pointer;
+        transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        position: relative;
+        z-index: 2;
+    }
+
+    .tile:active {
+        transform: scale(0.9);
+    }
+
+    .tile.selected {
+        background: rgba(255,255,255,0.15);
+        border-color: #fff;
+        box-shadow: 0 0 20px rgba(255,255,255,0.2);
+        transform: scale(1.05);
+    }
+
+    .tile.matched {
+        opacity: 0;
+        pointer-events: none;
+        transform: scale(0.5);
+    }
+
+    /* --- CANVAS LAYERS --- */
+    #fx-canvas {
+        position: absolute;
+        top: 0;
+        left: 0;
+        pointer-events: none;
+        z-index: 5;
+    }
+
+    /* --- DOCK --- */
+    .dock-container {
+        padding: 20px;
+        display: flex;
+        justify-content: center;
+        z-index: 200;
+    }
+
+    .glass-dock {
+        background: rgba(0, 0, 0, 0.6);
+        backdrop-filter: blur(30px);
+        border: 1px solid var(--glass-border);
+        border-radius: 30px;
+        padding: 12px 24px;
+        display: flex;
+        align-items: center;
+        gap: 20px;
+        max-width: 95vw;
+        overflow-x: auto;
+        scrollbar-width: none;
+    }
+
+    .glass-dock::-webkit-scrollbar { display: none; }
+
+    .stat-item {
+        display: flex;
+        flex-direction: column;
+        min-width: 60px;
+    }
+
+    .stat-label {
+        font-size: 0.6rem;
+        font-family: var(--font-tech);
+        color: rgba(255,255,255,0.4);
+        text-transform: uppercase;
+    }
+
+    .stat-value {
+        font-size: 0.9rem;
+        font-family: var(--font-tech);
+        font-weight: 700;
+        color: #fff;
+    }
+
+    .dock-btn {
+        width: 44px;
+        height: 44px;
+        border-radius: 50%;
+        border: 1px solid var(--glass-border);
+        background: var(--glass);
+        color: #fff;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        flex-shrink: 0;
+    }
+
+    /* --- LOCKDOWN SCREEN --- */
+    #security-screen {
+        background: rgba(0,0,0,0.95);
+        z-index: 1000;
+    }
+
+    .security-header {
+        color: var(--danger);
+        font-family: var(--font-tech);
+        font-weight: 900;
+        margin-bottom: 2rem;
+        letter-spacing: 5px;
+    }
+
+    .math-problem {
+        font-size: 2.5rem;
+        font-family: var(--font-tech);
+        margin-bottom: 2rem;
+    }
+
+    /* --- ANIMATIONS --- */
+    @keyframes floating {
+        0% { transform: translateY(0); }
+        50% { transform: translateY(-10px); }
+        100% { transform: translateY(0); }
+    }
+
+    .float-text {
+        position: absolute;
+        color: #fff;
+        font-family: var(--font-tech);
+        font-weight: 700;
+        pointer-events: none;
+        animation: floatUp 1s forwards;
+        z-index: 300;
+    }
+
+    @keyframes floatUp {
+        from { opacity: 1; transform: translateY(0); }
+        to { opacity: 0; transform: translateY(-50px); }
+    }
+
+    /* --- NOTIFICATIONS --- */
+    #toast-container {
+        position: fixed;
+        top: 20px;
+        left: 50%;
+        transform: translateX(-50%);
+        z-index: 2000;
+    }
+
+    .toast {
+        background: rgba(255,255,255,0.1);
+        backdrop-filter: blur(10px);
+        padding: 10px 20px;
+        border-radius: 50px;
+        border: 1px solid var(--glass-border);
+        font-size: 0.8rem;
+        margin-bottom: 10px;
+        animation: fadeIn 0.3s;
+    }
+
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(-10px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+</style>
+
+</head>
+<body>
+<div id="app">
+<canvas id="particle-canvas"></canvas>
+<canvas id="fx-canvas"></canvas>
+<div id="boot-screen" class="screen">
+    <div class="logo-text">XOLERIC</div>
+    <div class="version-tag">X-CLASS QUANTUM PRO</div>
+    <div style="width: 200px; height: 2px; background: rgba(255,255,255,0.1); position: relative; overflow: hidden;">
+        <div id="boot-progress" style="position: absolute; width: 0%; height: 100%; background: #fff; transition: width 0.5s;"></div>
+    </div>
+</div>
+
+<div id="login-screen" class="screen hidden">
+    <div class="glass-panel">
+        <div class="logo-text" style="font-size: 1.5rem;">ACCESS PANEL</div>
+        <div class="version-tag">ENTER QUANTUM SIGNATURE</div>
+        <div class="input-wrapper">
+            <input type="text" id="player-name-input" placeholder="PLAYER_ID" maxlength="12">
+        </div>
+        <button class="btn btn-primary" id="start-btn">INITIALIZE</button>
+    </div>
+</div>
+
+<div id="gameover-screen" class="screen hidden">
+    <div class="glass-panel">
+        <div class="logo-text" style="color: var(--danger);">TERMINATED</div>
+        <div id="final-stats" style="margin: 20px 0; line-height: 2;"></div>
+        <button class="btn btn-primary" id="restart-btn">REBOOT SESSION</button>
+    </div>
+</div>
+
+<div id="security-screen" class="screen hidden">
+    <div class="security-header">SECURITY BREACH</div>
+    <div class="glass-panel" style="border-color: var(--danger);">
+        <div class="version-tag" style="color: var(--danger);">SOLVE TO DECRYPT INTERFACE</div>
+        <div class="math-problem" id="math-problem">12 + 45</div>
+        <input type="number" id="math-input" placeholder="RESULT">
+        <button class="btn btn-primary" style="margin-top: 1rem; background: var(--danger); color: #fff;" id="decrypt-btn">DECRYPT</button>
+    </div>
+</div>
+
+<div id="game-ui" class="hidden">
+    <div class="top-spacer">
+        <div class="logo-text" style="font-size: 1.2rem; opacity: 0.3;">XOLERIC PRO</div>
+    </div>
+
+    <div id="grid-container">
+        <div id="puzzle-grid"></div>
+    </div>
+
+    <div class="dock-container">
+        <div class="glass-dock">
+            <div class="stat-item">
+                <span class="stat-label">USER</span>
+                <span class="stat-value" id="dock-name">---</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-label">LVL</span>
+                <span class="stat-value" id="dock-lvl">01</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-label">SCORE</span>
+                <span class="stat-value" id="dock-score">0</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-label">COMBO</span>
+                <span class="stat-value" id="dock-combo" style="color: var(--neon-blue);">x1</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-label">ERR</span>
+                <span class="stat-value" id="dock-err" style="color: var(--danger);">0/5</span>
+            </div>
+            <div class="dock-btn" id="hint-btn">H</div>
+            <div class="dock-btn" id="shuffle-btn">S</div>
+            <div class="dock-btn" id="exit-btn" style="color: var(--danger);">X</div>
+        </div>
+    </div>
+</div>
+
+<div id="toast-container"></div>
+
+</div>
+<script>
+/**
+ * XOLERIC X-CLASS QUANTUM PRO
+ * CORE GAME ENGINE
+   */
+const CONFIG = {
+errorLimit: 5,
+baseGridSize: 4,
+maxLevel: 20,
+tileEmojis: ['🌑', '🛸', '🛰️', '🪐', '☄️', '⚛️', '🧬', '🔮', '💎', '🧿', '🌀', '💠', '☣️', '🛡️', '⚔️', '🗝️', '🧪', '🔭'],
+comboTimeout: 3000
+};
+class QuantumEngine {
+constructor() {
+this.player = {
+name: 'GUEST',
+level: 1,
+score: 0,
+errors: 0,
+highScore: 0
+};
+    this.state = {
+        grid: [],
+        selectedTile: null,
+        isLocked: false,
+        combo: 1,
+        lastMatchTime: 0,
+        rows: 0,
+        cols: 0
+    };
+
+    this.canvases = {
+        particles: document.getElementById(&#39;particle-canvas&#39;),
+        fx: document.getElementById(&#39;fx-canvas&#39;)
+    };
+    
+    this.ctx = {
+        particles: this.canvases.particles.getContext(&#39;2d&#39;),
+        fx: this.canvases.fx.getContext(&#39;2d&#39;)
+    };
+
+    this.particles = [];
+    this.fxQueue = [];
+    
+    this.init();
+}
+
+async init() {
+    this.resize();
+    window.addEventListener(&#39;resize&#39;, () =&gt; this.resize());
+    this.setupEventListeners();
+    this.startBackgroundAnimation();
+    
+    // Boot sequence
+    await this.wait(500);
+    document.getElementById(&#39;boot-progress&#39;).style.width = &#39;100%&#39;;
+    await this.wait(800);
+    
+    this.loadSave();
+    this.checkSession();
+}
+
+resize() {
+    const w = window.innerWidth;
+    const h = window.innerHeight;
+    this.canvases.particles.width = w;
+    this.canvases.particles.height = h;
+    this.canvases.fx.width = w;
+    this.canvases.fx.height = h;
+}
+
+wait(ms) { return new Promise(resolve =&gt; setTimeout(resolve, ms)); }
+
+loadSave() {
+    const saved = localStorage.getItem(&#39;XOLERIC_SAVE&#39;);
+    if (saved) {
+        const data = JSON.parse(saved);
+        this.player = { ...this.player, ...data };
+    }
+}
+
+save() {
+    localStorage.setItem(&#39;XOLERIC_SAVE&#39;, JSON.stringify(this.player));
+}
+
+checkSession() {
+    if (this.player.name !== &#39;GUEST&#39; &amp;&amp; this.player.score &gt; 0) {
+        this.showScreen(&#39;game-ui&#39;);
+        this.startLevel();
+    } else {
+        this.showScreen(&#39;login-screen&#39;);
+    }
+}
+
+showScreen(id) {
+    document.querySelectorAll(&#39;.screen, #game-ui&#39;).forEach(s =&gt; s.classList.add(&#39;hidden&#39;));
+    document.getElementById(id).classList.remove(&#39;hidden&#39;);
+}
+
+setupEventListeners() {
+    document.getElementById(&#39;start-btn&#39;).onclick = () =&gt; {
+        const name = document.getElementById(&#39;player-name-input&#39;).value.trim();
+        if (name) {
+            this.player.name = name;
+            this.tryFullscreen();
+            this.startGame();
+        } else {
+            this.toast(&#39;INVALID PLAYER_ID&#39;);
+        }
+    };
+
+    document.getElementById(&#39;restart-btn&#39;).onclick = () =&gt; {
+        this.player.score = 0;
+        this.player.level = 1;
+        this.player.errors = 0;
+        this.startGame();
+    };
+
+    document.getElementById(&#39;hint-btn&#39;).onclick = () =&gt; this.findHint();
+    document.getElementById(&#39;shuffle-btn&#39;).onclick = () =&gt; this.shuffle();
+    document.getElementById(&#39;exit-btn&#39;).onclick = () =&gt; {
+        if(confirm(&#39;ABORT SESSION?&#39;)) {
+            this.save();
+            location.reload();
+        }
+    };
+
+    document.getElementById(&#39;decrypt-btn&#39;).onclick = () =&gt; this.verifySecurity();
+}
+
+tryFullscreen() {
+    try {
+        if (document.documentElement.requestFullscreen) {
+            document.documentElement.requestFullscreen();
+        }
+    } catch (e) {}
+}
+
+startGame() {
+    this.showScreen(&#39;game-ui&#39;);
+    this.player.errors = 0;
+    this.startLevel();
+    this.updateDock();
+}
+
+startLevel() {
+    const size = CONFIG.baseGridSize + Math.floor(this.player.level / 4);
+    this.state.rows = size;
+    this.state.cols = size;
+    
+    // Ensure even number of tiles
+    let totalTiles = this.state.rows * this.state.cols;
+    if (totalTiles % 2 !== 0) {
+        this.state.cols++;
+        totalTiles = this.state.rows * this.state.cols;
+    }
+
+    this.generateGrid(totalTiles);
+    this.renderGrid();
+    this.updateDock();
+}
+
+generateGrid(total) {
+    const emojis = [...CONFIG.tileEmojis];
+    const pairs = [];
+    for (let i = 0; i &lt; total / 2; i++) {
+        const emoji = emojis[i % emojis.length];
+        pairs.push(emoji, emoji);
+    }
+    
+    // Shuffle
+    for (let i = pairs.length - 1; i &gt; 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [pairs[i], pairs[j]] = [pairs[j], pairs[i]];
+    }
+
+    this.state.grid = [];
+    // Create grid with empty border for pathfinding
+    for (let r = 0; r &lt; this.state.rows + 2; r++) {
+        this.state.grid[r] = [];
+        for (let c = 0; c &lt; this.state.cols + 2; c++) {
+            if (r === 0 || r === this.state.rows + 1 || c === 0 || c === this.state.cols + 1) {
+                this.state.grid[r][c] = null;
+            } else {
+                this.state.grid[r][c] = pairs.pop();
+            }
+        }
+    }
+}
+
+renderGrid() {
+    const container = document.getElementById(&#39;puzzle-grid&#39;);
+    container.innerHTML = &#39;&#39;;
+    container.style.gridTemplateColumns = `repeat(${this.state.cols}, 1fr)`;
+
+    const tileWidth = Math.min(window.innerWidth * 0.8 / this.state.cols, 60);
+    container.style.width = `${(tileWidth + 8) * this.state.cols}px`;
+
+    for (let r = 1; r &lt;= this.state.rows; r++) {
+        for (let c = 1; c &lt;= this.state.cols; c++) {
+            const tile = document.createElement(&#39;div&#39;);
+            tile.className = &#39;tile&#39;;
+            tile.id = `tile-${r}-${c}`;
+            tile.innerHTML = this.state.grid[r][c] || &#39;&#39;;
+            if (!this.state.grid[r][c]) tile.classList.add(&#39;matched&#39;);
+            
+            tile.style.width = `${tileWidth}px`;
+            tile.style.height = `${tileWidth}px`;
+            tile.style.fontSize = `${tileWidth * 0.5}px`;
+
+            tile.onclick = () =&gt; this.handleTileClick(r, c);
+            container.appendChild(tile);
+        }
+    }
+}
+
+handleTileClick(r, c) {
+    if (this.state.isLocked || !this.state.grid[r][c]) return;
+
+    const currentTile = { r, c, val: this.state.grid[r][c] };
+    const el = document.getElementById(`tile-${r}-${c}`);
+
+    if (this.state.selectedTile) {
+        const prev = this.state.selectedTile;
+        const prevEl = document.getElementById(`tile-${prev.r}-${prev.c}`);
+
+        if (prev.r === r &amp;&amp; prev.c === c) {
+            el.classList.remove(&#39;selected&#39;);
+            this.state.selectedTile = null;
+            return;
+        }
+
+        if (prev.val === currentTile.val) {
+            const path = this.findPath(prev, currentTile);
+            if (path) {
+                this.matchFound(prev, currentTile, path);
+            } else {
+                this.mismatch(el, prevEl);
+            }
+        } else {
+            this.mismatch(el, prevEl);
+        }
+        this.state.selectedTile = null;
+    } else {
+        this.state.selectedTile = currentTile;
+        el.classList.add(&#39;selected&#39;);
+    }
+}
+
+findPath(start, end) {
+    const rows = this.state.rows + 2;
+    const cols = this.state.cols + 2;
+    const queue = [{ r: start.r, c: start.c, dir: -1, turns: 0, path: [[start.r, start.c]] }];
+    const visited = new Map();
+
+    while (queue.length &gt; 0) {
+        const current = queue.shift();
+
+        if (current.turns &gt; 2) continue;
+        if (current.r === end.r &amp;&amp; current.c === end.c) return current.path;
+
+        const neighbors = [
+            { r: current.r - 1, c: current.c, d: 0 },
+            { r: current.r + 1, c: current.c, d: 1 },
+            { r: current.r, c: current.c - 1, d: 2 },
+            { r: current.r, c: current.c + 1, d: 3 }
+        ];
+
+        for (const n of neighbors) {
+            if (n.r &gt;= 0 &amp;&amp; n.r &lt; rows &amp;&amp; n.c &gt;= 0 &amp;&amp; n.c &lt; cols) {
+                const isEnd = (n.r === end.r &amp;&amp; n.c === end.c);
+                const isEmpty = this.state.grid[n.r][n.c] === null;
+
+                if (isEmpty || isEnd) {
+                    const newTurns = (current.dir !== -1 &amp;&amp; current.dir !== n.d) ? current.turns + 1 : current.turns;
+                    if (newTurns &lt;= 2) {
+                        const key = `${n.r},${n.c},${n.d}`;
+                        if (!visited.has(key) || visited.get(key) &gt; newTurns) {
+                            visited.set(key, newTurns);
+                            queue.push({
+                                r: n.r,
+                                c: n.c,
+                                dir: n.d,
+                                turns: newTurns,
+                                path: [...current.path, [n.r, n.c]]
+                            });
+                        }
+                    }
+                }
+            }
+        }
+    }
+    return null;
+}
+
+matchFound(t1, t2, path) {
+    this.state.grid[t1.r][t1.c] = null;
+    this.state.grid[t2.r][t2.c] = null;
+
+    const el1 = document.getElementById(`tile-${t1.r}-${t1.c}`);
+    const el2 = document.getElementById(`tile-${t2.r}-${t2.c}`);
+
+    this.drawPathFx(path);
+    
+    setTimeout(() =&gt; {
+        el1.classList.add(&#39;matched&#39;);
+        el2.classList.add(&#39;matched&#39;);
+        
+        this.updateCombo();
+        const points = 100 * this.state.combo;
+        this.player.score += points;
+        this.showFloatingText(`+${points}`, el2);
+        this.updateDock();
+        this.checkLevelComplete();
+    }, 200);
+}
+
+mismatch(el1, el2) {
+    this.player.errors++;
+    el1.classList.remove(&#39;selected&#39;);
+    el2.classList.remove(&#39;selected&#39;);
+    
+    this.toast(&#39;CONNECTION FAILED&#39;);
+    this.updateDock();
+
+    if (this.player.errors &gt;= CONFIG.errorLimit) {
+        this.triggerLockdown();
+    }
+}
+
+updateCombo() {
+    const now = Date.now();
+    if (now - this.state.lastMatchTime &lt; CONFIG.comboTimeout) {
+        this.state.combo++;
+    } else {
+        this.state.combo = 1;
+    }
+    this.state.lastMatchTime = now;
+}
+
+checkLevelComplete() {
+    const remaining = this.state.grid.flat().filter(t =&gt; t !== null).length;
+    if (remaining === 0) {
+        this.player.level++;
+        this.toast(`LEVEL ${this.player.level} INITIALIZED`);
+        setTimeout(() =&gt; this.startLevel(), 1000);
+        this.save();
+    }
+}
+
+shuffle() {
+    const existing = this.state.grid.flat().filter(t =&gt; t !== null);
+    for (let r = 1; r &lt;= this.state.rows; r++) {
+        for (let c = 1; c &lt;= this.state.cols; c++) {
+            if (this.state.grid[r][c] !== null) {
+                const idx = Math.floor(Math.random() * existing.length);
+                this.state.grid[r][c] = existing.splice(idx, 1)[0];
+            }
+        }
+    }
+    this.renderGrid();
+    this.toast(&#39;GRID REORGANIZED&#39;);
+}
+
+findHint() {
+    // Simple search for any pair with valid path
+    const tiles = [];
+    for (let r = 1; r &lt;= this.state.rows; r++) {
+        for (let c = 1; c &lt;= this.state.cols; c++) {
+            if (this.state.grid[r][c]) tiles.push({r, c, val: this.state.grid[r][c]});
+        }
+    }
+
+    for (let i = 0; i &lt; tiles.length; i++) {
+        for (let j = i + 1; j &lt; tiles.length; j++) {
+            if (tiles[i].val === tiles[j].val) {
+                const path = this.findPath(tiles[i], tiles[j]);
+                if (path) {
+                    const el1 = document.getElementById(`tile-${tiles[i].r}-${tiles[i].c}`);
+                    const el2 = document.getElementById(`tile-${tiles[j].r}-${tiles[j].c}`);
+                    el1.style.borderColor = &#39;var(--neon-blue)&#39;;
+                    el2.style.borderColor = &#39;var(--neon-blue)&#39;;
+                    setTimeout(() =&gt; {
+                        el1.style.borderColor = &#39;&#39;;
+                        el2.style.borderColor = &#39;&#39;;
+                    }, 1000);
+                    return;
+                }
+            }
+        }
+    }
+    this.toast(&#39;NO MATCHES: SHUFFLE RECOMMENDED&#39;);
+}
+
+updateDock() {
+    document.getElementById(&#39;dock-name&#39;).innerText = this.player.name.toUpperCase();
+    document.getElementById(&#39;dock-lvl&#39;).innerText = String(this.player.level).padStart(2, &#39;0&#39;);
+    document.getElementById(&#39;dock-score&#39;).innerText = this.player.score.toLocaleString();
+    document.getElementById(&#39;dock-combo&#39;).innerText = `x${this.state.combo}`;
+    document.getElementById(&#39;dock-err&#39;).innerText = `${this.player.errors}/${CONFIG.errorLimit}`;
+}
+
+triggerLockdown() {
+    this.state.isLocked = true;
+    const a = Math.floor(Math.random() * 50) + 10;
+    const b = Math.floor(Math.random() * 50) + 10;
+    this.securityAnswer = a + b;
+    document.getElementById(&#39;math-problem&#39;).innerText = `${a} + ${b}`;
+    document.getElementById(&#39;math-input&#39;).value = &#39;&#39;;
+    this.showScreen(&#39;security-screen&#39;);
+}
+
+verifySecurity() {
+    const val = parseInt(document.getElementById(&#39;math-input&#39;).value);
+    if (val === this.securityAnswer) {
+        this.player.errors = 0;
+        this.state.isLocked = false;
+        this.showScreen(&#39;game-ui&#39;);
+        this.updateDock();
+        this.toast(&#39;ACCESS RESTORED&#39;);
+    } else {
+        this.gameOver();
+    }
+}
+
+gameOver() {
+    document.getElementById(&#39;final-stats&#39;).innerHTML = `
+        PLAYER: ${this.player.name}<br>
+        FINAL SCORE: ${this.player.score.toLocaleString()}<br>
+        LEVEL REACHED: ${this.player.level}
+    `;
+    this.showScreen(&#39;gameover-screen&#39;);
+}
+
+toast(msg) {
+    const t = document.createElement(&#39;div&#39;);
+    t.className = &#39;toast&#39;;
+    t.innerText = msg;
+    document.getElementById(&#39;toast-container&#39;).appendChild(t);
+    setTimeout(() =&gt; t.remove(), 3000);
+}
+
+showFloatingText(text, el) {
+    const rect = el.getBoundingClientRect();
+    const f = document.createElement(&#39;div&#39;);
+    f.className = &#39;float-text&#39;;
+    f.innerText = text;
+    f.style.left = `${rect.left + rect.width / 2}px`;
+    f.style.top = `${rect.top}px`;
+    document.body.appendChild(f);
+    setTimeout(() =&gt; f.remove(), 1000);
+}
+
+drawPathFx(path) {
+    const pts = path.map(p =&gt; {
+        const el = document.getElementById(`tile-${p[0]}-${p[1]}`);
+        if (el) {
+            const rect = el.getBoundingClientRect();
+            return { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 };
+        } else {
+            // If it&#39;s a border tile, calculate its position based on neighboring real tiles
+            const containerRect = document.getElementById(&#39;puzzle-grid&#39;).getBoundingClientRect();
+            const tileWidth = containerRect.width / this.state.cols;
+            const tileHeight = containerRect.height / this.state.rows;
+            return {
+                x: containerRect.left + (p[1] - 0.5) * tileWidth,
+                y: containerRect.top + (p[0] - 0.5) * tileHeight
+            };
+        }
+    });
+
+    this.fxQueue.push({
+        type: &#39;path&#39;,
+        points: pts,
+        alpha: 1.0,
+        color: this.state.combo &gt; 1 ? &#39;#00f2ff&#39; : &#39;#ffffff&#39;
+    });
+}
+
+startBackgroundAnimation() {
+    // Initialize background particles
+    for (let i = 0; i &lt; 50; i++) {
+        this.particles.push({
+            x: Math.random() * window.innerWidth,
+            y: Math.random() * window.innerHeight,
+            size: Math.random() * 2,
+            vx: (Math.random() - 0.5) * 0.5,
+            vy: (Math.random() - 0.5) * 0.5
+        });
+    }
+
+    const render = () =&gt; {
+        // Background
+        this.ctx.particles.clearRect(0, 0, this.canvases.particles.width, this.canvases.particles.height);
+        this.ctx.particles.fillStyle = &#39;rgba(255,255,255,0.2)&#39;;
+        this.particles.forEach(p =&gt; {
+            p.x += p.vx;
+            p.y += p.vy;
+            if (p.x &lt; 0) p.x = window.innerWidth;
+            if (p.x &gt; window.innerWidth) p.x = 0;
+            if (p.y &lt; 0) p.y = window.innerHeight;
+            if (p.y &gt; window.innerHeight) p.y = 0;
+            this.ctx.particles.beginPath();
+            this.ctx.particles.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+            this.ctx.particles.fill();
+        });
+
+        // FX Layer
+        this.ctx.fx.clearRect(0, 0, this.canvases.fx.width, this.canvases.fx.height);
+        for (let i = this.fxQueue.length - 1; i &gt;= 0; i--) {
+            const fx = this.fxQueue[i];
+            if (fx.type === &#39;path&#39;) {
+                this.ctx.fx.strokeStyle = fx.color;
+                this.ctx.fx.lineWidth = 3;
+                this.ctx.fx.lineCap = &#39;round&#39;;
+                this.ctx.fx.shadowBlur = 10;
+                this.ctx.fx.shadowColor = fx.color;
+                this.ctx.fx.globalAlpha = fx.alpha;
+                
+                this.ctx.fx.beginPath();
+                this.ctx.fx.moveTo(fx.points[0].x, fx.points[0].y);
+                for (let j = 1; j &lt; fx.points.length; j++) {
+                    this.ctx.fx.lineTo(fx.points[j].x, fx.points[j].y);
+                }
+                this.ctx.fx.stroke();
+                
+                fx.alpha -= 0.05;
+                if (fx.alpha &lt;= 0) this.fxQueue.splice(i, 1);
+            }
+        }
+        this.ctx.fx.globalAlpha = 1.0;
+        this.ctx.fx.shadowBlur = 0;
+
+        requestAnimationFrame(render);
+    };
+    render();
+}
+
+}
+// Service Worker Logic
+if ('serviceWorker' in navigator) {
+const swCode = const CACHE_NAME = &#39;xoleric-v1&#39;; self.addEventListener(&#39;install&#39;, e =&gt; { e.waitUntil(caches.open(CACHE_NAME).then(cache =&gt; cache.addAll([&#39;./&#39;]))); }); self.addEventListener(&#39;fetch&#39;, e =&gt; { e.respondWith(caches.match(e.request).then(res =&gt; res || fetch(e.request))); });;
+const blob = new Blob([swCode], { type: 'application/javascript' });
+const swUrl = URL.createObjectURL(blob);
+navigator.serviceWorker.register(swUrl);
+}
+// Initialize on Load
+window.addEventListener('load', () => {
+window.game = new QuantumEngine();
+});
+</script>
+</body>
+</html>
