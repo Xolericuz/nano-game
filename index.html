@@ -6,7 +6,7 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="theme-color" content="#000000">
-    <meta name="description" content="SUPER PAC-MAN X - 100 Levels Premium Game">
+    <meta name="description" content="SUPER PAC-MAN X - Professional Mobile Game">
     <title>SUPER PAC-MAN X | 100 LEVELS</title>
     <link rel="manifest" href="manifest.json">
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -24,25 +24,13 @@
             --glow-cyan: 0 0 20px #00ffff;
             --glow-magenta: 0 0 20px #ff00ff;
         }
-
         * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
         html, body { height: 100%; overflow: hidden; background: var(--c-bg); touch-action: none; user-select: none; -webkit-user-select: none; font-family: 'Orbitron', sans-serif; }
+        body { display: flex; flex-direction: column; align-items: center; justify-content: center; background: radial-gradient(ellipse at 30% 20%, rgba(0,255,255,0.05) 0%, transparent 50%), radial-gradient(ellipse at 70% 80%, rgba(255,0,255,0.05) 0%, transparent 50%), linear-gradient(180deg, #000 0%, #050a15 50%, #000 100%); }
         
-        body {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            background: radial-gradient(ellipse at 30% 20%, rgba(0,255,255,0.05) 0%, transparent 50%),
-                        radial-gradient(ellipse at 70% 80%, rgba(255,0,255,0.05) 0%, transparent 50%),
-                        linear-gradient(180deg, #000 0%, #050a15 50%, #000 100%);
-        }
-
-        /* SCREENS */
         .screen { position: fixed; top: 0; left: 0; width: 100%; height: 100%; display: none; flex-direction: column; align-items: center; justify-content: center; }
         .screen.active { display: flex; }
-        .screen.hidden { display: none; }
-
+        
         /* LOADING */
         #loading { background: var(--c-bg); z-index: 1000; }
         .loader-title { font-size: 2.5rem; font-weight: 900; background: linear-gradient(90deg, var(--c-cyan), var(--c-magenta)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; animation: pulse 1s infinite; }
@@ -102,7 +90,9 @@
         .modal-score { font-size: 1.2rem; margin-bottom: 25px; color: rgba(255,255,255,0.7); }
         .modal-score strong { color: var(--c-cyan); font-size: 1.5rem; }
 
-        /* RESPONSIVE */
+        .combo-text { position: fixed; font-size: 2rem; font-weight: 900; color: var(--c-yellow); pointer-events: none; animation: comboPop 0.5s forwards; text-shadow: var(--glow-cyan); }
+        @keyframes comboPop { 0%{transform:scale(0)translate(-50%,-50%)} 50%{transform:scale(1.2)} 100%{transform:scale(1)translateY(-50px)} }
+
         @media (max-width: 450px) {
             .mobile-controls { display: flex; }
             .game-title { font-size: 1.8rem; }
@@ -121,10 +111,33 @@
     <!-- MENU -->
     <div id="menu" class="screen">
         <div class="game-title">SUPER PAC-MAN X</div>
-        <div class="game-version">100 BOSQICH | PREMIUM</div>
+        <div class="game-version">100 BOSQICH | PRO EDITION</div>
         <div class="high-score" id="menuHighScore">REKORD: 0</div>
-        <button class="menu-btn primary" id="btnStart">▶ O'YNA</button>
-        <button class="menu-btn secondary" id="btnDownload">⬇ APK YUKLAB OLISH</button>
+        <div style="display:grid; gap:10px; width:100%; max-width:250px;">
+            <button class="menu-btn primary" id="btnStart">▶ O'YNA</button>
+            <button class="menu-btn secondary" id="btnHowto">? QOIDALAR</button>
+            <button class="menu-btn secondary" id="btnDownload">⬇ APK YUKLAB OLISH</button>
+        </div>
+    </div>
+
+    <!-- HOW TO PLAY -->
+    <div id="howto" class="screen" style="background:rgba(0,0,0,0.95); z-index:50;">
+        <div class="modal-card">
+            <div class="modal-title" style="color:var(--c-cyan)">QOIDALAR</div>
+            <div style="text-align:left; color:#ccc; line-height:1.8; font-size:0.9rem;">
+                <p><b style="color:var(--c-cyan)">BOSHQARUV:</b></p>
+                <p>⬆⬇⬅➡ yoki W/A/S/D - Harakat</p>
+                <p>SHIFT - DASH (tezlanish)</p>
+                <p style="margin-top:10px"><b style="color:var(--c-yellow)">MAQSAD:</b></p>
+                <p>💊 Pellet yig'isball</p>
+                <p>⚡ Power pellet - ghostlarni yeyish</p>
+                <p>👻 DASH - tez qochish uchun</p>
+                <p style="margin-top:10px"><b style="color:var(--c-green)">REJIMLAR:</b></p>
+                <p>SCATTER - ghostlar hujum qiladi</p>
+                <p>CHASE - ghostlar qasd qiladi</p>
+            </div>
+            <button class="menu-btn primary" id="btnBack" style="margin-top:20px;">ORQAGA</button>
+        </div>
     </div>
 
     <!-- GAME -->
@@ -154,246 +167,313 @@
         <div class="modal-card">
             <div class="modal-title lose" id="modalTitle">GAME OVER</div>
             <div class="modal-score">Ball: <strong id="finalScore">0</strong></div>
-            <button class="menu-btn primary" id="btnRestart">QAYTA O'YNA</button>
+            <div style="display:grid; gap:10px;">
+                <button class="menu-btn primary" id="btnRestart">QAYTA O'YNA</button>
+                <button class="menu-btn secondary" id="btnMenu">MENYU</button>
+            </div>
         </div>
     </div>
 
     <script>
-    // ==================== SUPER PAC-MAN X ====================
-    // Premium Mobile Edition
-    
-    const CONFIG = {
+    // ==================== SUPER PAC-MAN X PRO ====================
+    // Professional Mobile Edition - Fixed & Optimized
+
+    const CFG = {
         TILE: 20,
         COLS: 18,
         ROWS: 18,
-        TOTAL_LEVELS: 100,
-        PAC_START: { x: 9, y: 13 + 0.5 },
-        GHOST_START: [{x:8,y:7.5},{x:10,y:7.5},{x:8,y:8.5},{x:10,y:8.5}],
-        COLORS: {
-            WALL: '#0a1628',
-            WALL_GLOW: 'rgba(0,255,255,0.15)',
-            PELLET: '#00ffff',
-            POWER: '#ff00ff',
-            PACMAN: '#ffff00',
-            PACMAN_DASH: '#ffffff',
-            GHOST: ['#ff3366','#ff99cc','#00ff88','#ffaa00'],
-            SCARED: '#3366ff'
-        }
+        MAX_LEVELS: 100,
+        
+        PAC_START: { x: 9, y: 13.5 },
+        GHOST_HOUSE: [
+            { x: 8, y: 7.5, color: '#ff3366', type: 'chaser' },
+            { x: 10, y: 7.5, color: '#ff99cc', type: 'ambush' },
+            { x: 8, y: 8.5, color: '#00ff88', type: 'random' },
+            { x: 10, y: 8.5, color: '#ffaa00', type: 'timid' }
+        ],
+        
+        SPEED: { PAC: 140, PAC_DASH: 320, GHOST: 85 },
+        
+        // FIXED MAP - HAR DOIM 18ta ELEMENT!
+        MAP: [
+            [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+            [1,2,2,2,2,2,2,2,2,1,2,2,2,2,2,2,2,1],
+            [1,2,1,1,2,1,1,1,2,1,2,1,1,1,2,1,1,2,1],
+            [1,3,1,1,2,1,1,1,2,1,2,1,1,1,2,1,1,2,1],
+            [1,2,1,1,2,1,1,1,2,1,2,1,1,1,2,1,1,2,1],
+            [1,2,2,2,2,2,2,2,2,1,2,2,2,2,2,2,2,1],
+            [1,2,1,1,2,1,2,1,1,1,1,2,1,2,1,1,2,1],
+            [1,2,1,1,2,1,2,1,1,1,1,2,1,2,1,1,2,1],
+            [1,2,2,2,2,2,2,2,2,0,2,2,2,2,2,2,2,1],
+            [1,1,1,1,2,1,1,1,1,1,1,1,2,1,1,1,1,1],
+            [1,2,2,2,2,1,2,2,2,1,2,2,2,1,2,2,2,1],
+            [1,2,1,1,1,1,1,1,2,1,2,1,1,1,1,1,1,2,1],
+            [1,2,1,1,1,1,1,1,2,1,2,1,1,1,1,1,1,2,1],
+            [1,2,2,2,2,2,2,2,2,1,2,2,2,2,2,2,2,1],
+            [1,2,1,1,2,1,1,1,1,1,1,1,1,1,2,1,1,2,1],
+            [1,2,1,1,2,1,1,1,1,1,1,1,1,1,2,1,1,2,1],
+            [1,2,2,2,2,1,1,1,2,1,2,1,1,1,2,2,2,2,1],
+            [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1]
+        ]
     };
 
-    // Classic Map Design
-    const MAP_TEMPLATE = [
-        [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
-        [1,2,2,2,2,2,2,2,2,1,2,2,2,2,2,2,2,1],
-        [1,2,1,1,2,1,1,1,2,1,2,1,1,1,2,1,1,2,1],
-        [1,3,1,1,2,1,1,1,2,1,2,1,1,1,2,1,1,2,1],
-        [1,2,1,1,2,1,1,1,2,1,2,1,1,1,2,1,1,2,1],
-        [1,2,2,2,2,2,2,2,2,1,2,2,2,2,2,2,2,1],
-        [1,2,1,1,2,1,2,1,1,1,1,2,1,2,1,1,2,1],
-        [1,2,1,1,2,1,2,1,1,1,1,2,1,2,1,1,2,1],
-        [1,2,2,2,2,2,2,2,2,0,2,2,2,2,2,2,2,1],
-        [1,1,1,1,2,1,1,1,1,1,1,1,2,1,1,1,1,1],
-        [1,2,2,2,2,1,2,2,2,1,2,2,2,1,2,2,2,1],
-        [1,2,1,1,1,1,1,1,2,1,2,1,1,1,1,1,1,2,1],
-        [1,2,1,1,1,1,1,1,2,1,2,1,1,1,1,1,1,2,1],
-        [1,2,2,2,2,2,2,2,2,1,2,2,2,2,2,2,2,1],
-        [1,2,1,1,2,1,1,1,1,1,1,1,1,1,2,1,1,2,1],
-        [1,2,1,1,2,1,1,1,1,1,1,1,1,1,2,1,1,2,1],
-        [1,2,2,2,2,1,1,1,2,1,2,1,1,1,2,2,2,2,1],
-        [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1]
-    ];
+    // Verify map dimensions
+    console.assert(CFG.MAP.every(row => row.length === CFG.COLS), 'MAP ERROR: Not all rows are 18 columns!');
+    console.assert(CFG.MAP.length === CFG.ROWS, 'MAP ERROR: Not 18 rows!');
 
-    // ==================== AUDIO ====================
-    class Audio {
-        constructor() { this.ctx = null; }
+    // ==================== AUDIO ENGINE ====================
+    class AudioEngine {
+        constructor() { this.ctx = null; this.initialized = false; }
+        
         init() {
-            if (!this.ctx) {
-                this.ctx = new (window.AudioContext || window.webkitAudioContext)();
-            }
+            if (this.initialized) return;
+            this.ctx = new (window.AudioContext || window.webkitAudioContext)();
             if (this.ctx.state === 'suspended') this.ctx.resume();
+            this.initialized = true;
         }
-        play(type) {
+        
+        play(type, vol = 0.1) {
             if (!this.ctx) return;
+            const now = this.ctx.currentTime;
             const osc = this.ctx.createOscillator();
             const gain = this.ctx.createGain();
-            osc.connect(gain);
-            gain.connect(this.ctx.destination);
-            const now = this.ctx.currentTime;
+            
+            // Add slight randomization for variety
+            const freqOffset = () => (Math.random() - 0.5) * 20;
             
             switch(type) {
                 case 'eat':
-                    osc.frequency.setValueAtTime(800, now);
-                    osc.frequency.exponentialRampToValueAtTime(1100, now + 0.06);
-                    gain.gain.setValueAtTime(0.08, now);
-                    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.06);
-                    osc.start(now); osc.stop(now + 0.06);
+                    osc.frequency.setValueAtTime(800 + freqOffset(), now);
+                    osc.frequency.exponentialRampToValueAtTime(1200, now + 0.05);
+                    gain.gain.setValueAtTime(vol, now);
+                    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.05);
+                    osc.start(now); osc.stop(now + 0.05);
                     break;
                 case 'power':
                     osc.type = 'square';
                     osc.frequency.setValueAtTime(400, now);
-                    osc.frequency.linearRampToValueAtTime(550, now + 0.15);
-                    gain.gain.setValueAtTime(0.1, now);
+                    osc.frequency.linearRampToValueAtTime(600, now + 0.15);
+                    gain.gain.setValueAtTime(vol * 1.2, now);
                     osc.start(now); osc.stop(now + 0.3);
                     break;
                 case 'dash':
                     osc.type = 'sawtooth';
-                    osc.frequency.setValueAtTime(150, now);
-                    osc.frequency.exponentialRampToValueAtTime(500, now + 0.1);
-                    gain.gain.setValueAtTime(0.15, now);
+                    osc.frequency.setValueAtTime(150 + freqOffset(), now);
+                    osc.frequency.exponentialRampToValueAtTime(600, now + 0.1);
+                    gain.gain.setValueAtTime(vol * 1.5, now);
                     osc.start(now); osc.stop(now + 0.1);
                     break;
                 case 'die':
                     osc.type = 'sawtooth';
-                    osc.frequency.setValueAtTime(300, now);
-                    osc.frequency.exponentialRampToValueAtTime(50, now + 0.4);
-                    gain.gain.setValueAtTime(0.2, now);
-                    osc.start(now); osc.stop(now + 0.4);
+                    osc.frequency.setValueAtTime(350, now);
+                    osc.frequency.exponentialRampToValueAtTime(50, now + 0.5);
+                    gain.gain.setValueAtTime(vol * 2, now);
+                    osc.start(now); osc.stop(now + 0.5);
                     break;
                 case 'ghost':
                     osc.type = 'triangle';
-                    osc.frequency.setValueAtTime(500, now);
-                    osc.frequency.exponentialRampToValueAtTime(900, now + 0.1);
-                    gain.gain.setValueAtTime(0.12, now);
-                    osc.start(now); osc.stop(now + 0.1);
+                    osc.frequency.setValueAtTime(550, now);
+                    osc.frequency.exponentialRampToValueAtTime(950, now + 0.08);
+                    gain.gain.setValueAtTime(vol, now);
+                    osc.start(now); osc.stop(now + 0.08);
                     break;
-                case 'level':
-                    [523, 659, 784].forEach((f, i) => {
-                        const o = this.ctx.createOscillator();
-                        const g = this.ctx.createGain();
-                        o.connect(g); g.connect(this.ctx.destination);
-                        o.frequency.value = f;
-                        g.gain.setValueAtTime(0.12, now + i*0.08);
-                        g.gain.exponentialRampToValueAtTime(0.01, now + i*0.08 + 0.1);
-                        o.start(now + i*0.08); o.stop(now + i*0.08 + 0.1);
-                    });
+                case 'combo':
+                    osc.type = 'square';
+                    osc.frequency.setValueAtTime(440, now);
+                    osc.frequency.linearRampToValueAtTime(880, now + 0.15);
+                    gain.gain.setValueAtTime(vol * 1.5, now);
+                    osc.start(now); osc.stop(now + 0.15);
                     break;
             }
+            
+            osc.connect(gain);
+            gain.connect(this.ctx.destination);
         }
     }
 
-    // ==================== GAME ====================
+    // ==================== SAVE SYSTEM ====================
+    class SaveSystem {
+        constructor() {
+            this.data = JSON.parse(localStorage.getItem('pacmanSave') || '{}');
+        }
+        
+        get(key, def = 0) { return this.data[key] ?? def; }
+        set(key, val) { this.data[key] = val; this.save(); }
+        
+        save() {
+            localStorage.setItem('pacmanSave', JSON.stringify(this.data));
+        }
+    }
+
+    // ==================== GAME ENGINE ====================
     class Game {
         constructor() {
             this.canvas = document.getElementById('gameCanvas');
             this.ctx = this.canvas.getContext('2d');
-            this.audio = new Audio();
+            this.audio = new AudioEngine();
+            this.save = new SaveSystem();
             
-            const W = CONFIG.COLS * CONFIG.TILE;
-            const H = CONFIG.ROWS * CONFIG.TILE;
-            this.canvas.width = W;
-            this.canvas.height = H;
+            this.canvas.width = CFG.COLS * CFG.TILE;
+            this.canvas.height = CFG.ROWS * CFG.TILE;
             
-            this.state = { level: 1, score: 0, lives: 3, highScore: parseInt(localStorage.getItem('pacmanHi') || '0'), gameOver: false, power: false, powerTime: 0 };
-            this.pacman = null;
+            this.reset();
+        }
+        
+        reset() {
+            this.state = {
+                level: 1,
+                score: 0,
+                lives: 3,
+                combo: 0,
+                gameOver: false,
+                power: false,
+                powerTime: 0,
+                pellets: 0,
+                mode: 'chase', // chase, scatter, frightened
+                modeTime: 0
+            };
+            
+            this.pacman = {
+                ...CFG.PAC_START,
+                dx: 0, dy: 0,
+                nextDx: 0, nextDy: 0,
+                dash: false, dashCooldown: 0,
+                mouthAngle: 0.2
+            };
+            
             this.ghosts = [];
             this.grid = [];
             this.lastTime = 0;
-        }
-
-        start() {
-            this.loadLevel(1);
-            this.bindControls();
-            this.updateUI();
-            requestAnimationFrame(t => this.loop(t));
-        }
-
-        loadLevel(lvl) {
-            this.grid = MAP_TEMPLATE.map(r => [...r]);
+            this.particles = [];
             
-            // Find center for power pellet
-            let center = 0;
-            for(let y=0; y<CONFIG.ROWS; y++) {
-                for(let x=0; x<CONFIG.COLS; x++) {
-                    if(this.grid[y][x] === 0) center++;
+            // Load high score
+            this.state.highScore = this.save.get('highScore', 0);
+        }
+        
+        startLevel(level) {
+            // Deep copy map
+            this.grid = CFG.MAP.map(r => [...r]);
+            
+            // Count pellets
+            this.state.pellets = 0;
+            for(let y=0; y<CFG.ROWS; y++) {
+                for(let x=0; x<CFG.COLS; x++) {
+                    if (this.grid[y][x] === 2 || this.grid[y][x] === 3) this.state.pellets++;
                 }
             }
-
-            this.state.level = lvl;
-            this.state.gameOver = false;
+            
+            this.state.level = level;
             this.state.power = false;
-            this.state.powerTime = 0;
+            this.state.mode = 'chase';
+            this.state.modeTime = 7;
             
-            const spd = 130 + lvl * 2;
-            
+            // Setup pacman
+            const pacSpeed = CFG.SPEED.PAC + (level - 1) * 2;
             this.pacman = {
-                ...CONFIG.PAC_START,
+                ...CFG.PAC_START,
                 dx: 0, dy: 0,
                 nextDx: 0, nextDy: 0,
-                speed: spd,
-                dash: false, dashCooldown: 0
+                speed: Math.min(pacSpeed, 220),
+                dash: false, dashCooldown: 0,
+                mouthAngle: 0.2
             };
-
-            this.ghosts = CONFIG.GHOST_START.map((p, i) => ({
-                ...p,
+            
+            // Setup ghosts with BFS pathfinding
+            const ghSpeed = CFG.SPEED.GHOST + (level - 1) * 1.5;
+            this.ghosts = CFG.GHOST_HOUSE.map((h, i) => ({
+                x: h.x, y: h.y,
+                tx: Math.floor(h.x), ty: Math.floor(h.y),
                 dx: i%2?1:-1, dy: 0,
-                speed: 70 + lvl * 1.2,
-                color: CONFIG.COLORS.GHOST[i],
+                speed: Math.min(ghSpeed + i*2, 130),
+                color: h.color,
+                type: h.type,
                 scared: false,
-                type: ['chaser','ambush','random','timid'][i]
+                path: [],
+                pathIdx: 0
             }));
-
-            this.audio.play('level');
+            
+            // Reset state
+            this.state.gameOver = false;
+            this.state.mode = 'chase';
+            this.state.modeTime = 7;
+            
+            this.audio.play('power', 0.05);
             this.updateUI();
         }
-
-        bindControls() {
-            // Keyboard
-            document.addEventListener('keydown', e => {
-                this.audio.init();
-                if (this.state.gameOver) return;
-                const k = e.key.toLowerCase();
-                if (k === 'arrowup' || k === 'w') this.pacman.nextDy = -1;
-                else if (k === 'arrowdown' || k === 's') this.pacman.nextDy = 1;
-                else if (k === 'arrowleft' || k === 'a') this.pacman.nextDx = -1;
-                else if (k === 'arrowright' || k === 'd') this.pacman.nextDx = 1;
-                else if (k === 'shift') this.dash();
-            });
-
-            // Mobile D-Pad
-            document.querySelectorAll('.dpad-btn').forEach(btn => {
-                const setDir = (on) => {
-                    if (on) {
-                        btn.classList.add('pressed');
-                        this.pacman.nextDx = parseInt(btn.dataset.dx);
-                        this.pacman.nextDy = parseInt(btn.dataset.dy);
-                    } else {
-                        btn.classList.remove('pressed');
+        
+        // BFS Pathfinding
+        findPath(startX, startY, targetX, targetY, canScared = false) {
+            const queue = [{ x: startX, y: startY, path: [] }];
+            const visited = new Set();
+            visited.add(`${startX},${startY}`);
+            
+            while (queue.length > 0) {
+                const curr = queue.shift();
+                
+                if (curr.x === targetX && curr.y === targetY) {
+                    return curr.path;
+                }
+                
+                const dirs = [
+                    { dx: 1, dy: 0 }, { dx: -1, dy: 0 },
+                    { dx: 0, dy: 1 }, { dx: 0, dy: -1 }
+                ];
+                
+                for (const d of dirs) {
+                    const nx = curr.x + d.dx;
+                    const ny = curr.y + d.dy;
+                    const key = `${nx},${ny}`;
+                    
+                    if (nx >= 0 && nx < CFG.COLS && ny >= 0 && ny < CFG.ROWS &&
+                        !visited.has(key) && this.grid[ny][nx] !== 1 &&
+                        (!canScared || this.grid[ny][nx] !== 0)) {
+                        visited.add(key);
+                        queue.push({
+                            x: nx, y: ny,
+                            path: [...curr.path, { dx: d.dx, dy: d.dy }]
+                        });
                     }
-                };
-                btn.addEventListener('touchstart', e => { e.preventDefault(); setDir(true); this.audio.init(); }, {passive:false});
-                btn.addEventListener('touchend', e => setDir(false));
-                btn.addEventListener('mousedown', e => { e.preventDefault(); setDir(true); this.audio.init(); });
-                btn.addEventListener('mouseup', e => setDir(false));
-                btn.addEventListener('mouseleave', e => setDir(false));
-            });
-
-            // Dash Button
-            const dashBtn = document.getElementById('dashBtn');
-            const doDash = (e) => { e.preventDefault(); this.dash(); };
-            dashBtn.addEventListener('touchstart', doDash, {passive:false});
-            dashBtn.addEventListener('mousedown', doDash);
+                }
+            }
+            
+            return [];
         }
-
-        dash() {
-            if (this.state.gameOver || this.pacman.dash || this.pacman.dashCooldown > 0) return;
-            this.audio.play('dash');
-            this.pacman.dash = true;
-            this.pacman.dashCooldown = 1;
-            document.getElementById('dashInd').className = 'stat-dash active';
-            setTimeout(() => { this.pacman.dash = false; }, 180);
+        
+        getGhostTarget(gh) {
+            const px = this.pacman.x;
+            const py = this.pacman.y;
+            
+            if (this.state.power) {
+                return { x: Math.floor(Math.random() * CFG.COLS), y: Math.floor(Math.random() * CFG.ROWS) };
+            }
+            
+            const dx = px - gh.x;
+            const dy = py - gh.y;
+            
+            switch(gh.type) {
+                case 'chaser':
+                    return { x: Math.floor(px), y: Math.floor(py) };
+                case 'ambush':
+                    return { x: Math.floor(px + this.pacman.dx * 4), y: Math.floor(py + this.pacman.dy * 4) };
+                case 'random':
+                    if (Math.random() < 0.02) {
+                        return { x: Math.floor(Math.random() * CFG.COLS), y: Math.floor(Math.random() * CFG.ROWS) };
+                    }
+                    return { x: Math.floor(px), y: Math.floor(py) };
+                case 'timid':
+                    if (Math.hypot(dx, dy) > 6) return { x: Math.floor(px), y: Math.floor(py) };
+                    return { x: 1, y: 1 };
+            }
+            
+            return { x: Math.floor(px), y: Math.floor(py) };
         }
-
-        canMove(x, y) {
-            if (x < 0 || x >= CONFIG.COLS || y < 0 || y >= CONFIG.ROWS) return false;
-            return this.grid[y][x] !== 1;
-        }
-
+        
         movePacman(dt) {
             const p = this.pacman;
-            const spd = p.speed * (p.dash ? 2.2 : 1);
-            const step = spd * dt;
-
-            // Change direction if possible
+            const speed = p.speed * (p.dash ? 2.2 : 1);
+            const step = speed * dt;
+            
+            // Direction change
             if (p.nextDx !== 0 || p.nextDy !== 0) {
                 const tx = Math.floor(p.x);
                 const ty = Math.floor(p.y);
@@ -402,264 +482,343 @@
                     p.dy = p.nextDy;
                 }
             }
-
+            
             if (p.dx === 0 && p.dy === 0) return;
-
+            
             // Move
-            p.x += p.dx * step / CONFIG.TILE;
-            p.y += p.dy * step / CONFIG.TILE;
-
+            p.x += p.dx * step / CFG.TILE;
+            p.y += p.dy * step / CFG.TILE;
+            
             // Snap to grid
             const tx = Math.floor(p.x + 0.5);
             const ty = Math.floor(p.y + 0.5);
             const cx = tx + 0.5;
             const cy = ty + 0.5;
-
+            
             const dist = Math.abs(p.dx > 0 ? cx - p.x : p.dy > 0 ? cy - p.y : 0);
-
+            
             if (dist < 0.5) {
                 p.x = cx;
                 p.y = cy;
-
+                
                 // Check next turn
-                if (this.canMove(tx + p.nextDx, ty + p.nextDy) && (p.nextDx !== p.dx || p.nextDy !== p.dy)) {
+                if (this.canMove(tx + p.nextDx, ty + p.nextDy) && 
+                   (p.nextDx !== p.dx || p.nextDy !== p.dy)) {
                     p.dx = p.nextDx;
                     p.dy = p.nextDy;
                 }
+                
                 // Check forward
                 if (!this.canMove(tx + p.dx, ty + p.dy)) {
                     p.dx = 0; p.dy = 0;
                 }
             }
-
+            
             // Bounds
-            p.x = Math.max(0.5, Math.min(CONFIG.COLS-0.5, p.x));
-            p.y = Math.max(0.5, Math.min(CONFIG.ROWS-0.5, p.y));
-
-            // Eat pellet
+            p.x = Math.max(0.5, Math.min(CFG.COLS - 0.5, p.x));
+            p.y = Math.max(0.5, Math.min(CFG.ROWS - 0.5, p.y));
+            
+            // Eat
             const ex = Math.floor(p.x);
             const ey = Math.floor(p.y);
             const tile = this.grid[ey]?.[ex];
             
             if (tile === 2) {
                 this.state.score += 10;
+                this.state.combo++;
                 this.grid[ey][ex] = 0;
+                this.state.pellets--;
                 this.audio.play('eat');
+                
+                if (this.state.combo > 0 && this.state.combo % 10 === 0) {
+                    this.audio.play('combo');
+                }
             } else if (tile === 3) {
                 this.state.score += 50;
                 this.grid[ey][ex] = 0;
+                this.state.pellets--;
                 this.state.power = true;
                 this.state.powerTime = 6;
+                this.state.mode = 'frightened';
+                this.state.modeTime = 6;
                 this.audio.play('power');
             }
-
-            // Win?
-            let pellets = 0;
-            for(let y=0; y<CONFIG.ROWS; y++) {
-                for(let x=0; x<CONFIG.COLS; x++) {
-                    if (this.grid[y][x] === 2 || this.grid[y][x] === 3) pellets++;
+            
+            // Win level
+            if (this.state.pellets === 0) {
+                const next = this.state.level + 1;
+                if (next > CFG.MAX_LEVELS) {
+                    this.winGame();
+                } else {
+                    this.startLevel(next);
                 }
             }
-            if (pellets === 0) {
-                this.loadLevel(this.state.level + 1 > CONFIG.TOTAL_LEVELS ? 1 : this.state.level + 1);
-            }
-
+            
+            // Animate mouth
+            p.mouthAngle = 0.2 + Math.sin(Date.now() / 100) * 0.1;
+            
             this.updateUI();
         }
-
+        
         moveGhosts(dt) {
-            const gh = this.ghosts.map((g, i) => {
-                g.scared = this.state.power;
+            // Update mode timers
+            this.state.modeTime -= dt;
+            if (this.state.modeTime <= 0) {
+                this.state.mode = this.state.mode === 'chase' ? 'scatter' : 'chase';
+                this.state.modeTime = 7 + Math.random() * 3;
+            }
+            
+            if (this.state.power) {
+                this.state.powerTime -= dt;
+                if (this.state.powerTime <= 0) {
+                    this.state.power = false;
+                    this.state.mode = 'chase';
+                }
+            }
+            
+            if (this.pacman.dashCooldown > 0) {
+                this.pacman.dashCooldown -= dt;
+            }
+            
+            // Move ghosts
+            for (const gh of this.ghosts) {
+                gh.scared = this.state.power;
                 
-                const target = this.state.power ? {x: Math.random()*CONFIG.COLS, y: Math.random()*CONFIG.ROWS} :
-                            g.type === 'chaser' ? {x: this.pacman.x, y: this.pacman.y} :
-                            g.type === 'ambush' ? {x: this.pacman.x + this.pacman.dx*3, y: this.pacman.y + this.pacman.dy*3} :
-                            g.type === 'random' ? {x: g.x, y: g.y} :
-                            Math.hypot(g.x-this.pacman.x, g.y-this.pacman.y) > 6 ? {x: this.pacman.x, y: this.pacman.y} : {x:1,y:1};
-
-                const step = g.speed * dt / CONFIG.TILE;
-                g.x += g.dx * step;
-                g.y += g.dy * step;
-
-                const tx = Math.floor(g.x + 0.5);
-                const ty = Math.floor(g.y + 0.5);
-
-                if (tx !== Math.floor(g.x) || ty !== Math.floor(g.y)) {
-                    const dirs = [{x:1,y:0},{x:-1,y:0},{x:0,y:1},{x:0,y:-1}].filter(d => this.canMove(tx+d.x, ty+d.y));
-                    if (dirs.length) {
-                        dirs.sort((a,b) => Math.hypot(target.x-(tx+a.x), target.y-(ty+a.y)) - Math.hypot(target.x-(tx+b.x), target.y-(ty+b.y)));
-                        g.dx = dirs[0].x;
-                        g.dy = dirs[0].y;
+                const step = gh.speed * dt / CFG.TILE;
+                gh.x += gh.dx * step;
+                gh.y += gh.dy * step;
+                
+                const tx = Math.floor(gh.x + 0.5);
+                const ty = Math.floor(gh.y + 0.5);
+                
+                if (tx !== Math.floor(gh.x) || ty !== Math.floor(gh.y)) {
+                    const target = this.getGhostTarget(gh);
+                    
+                    // Get valid directions
+                    const dirs = [
+                        { dx: 1, dy: 0 }, { dx: -1, dy: 0 },
+                        { dx: 0, dy: 1 }, { dx: 0, dy: -1 }
+                    ].filter(d => this.canMove(tx + d.dx, ty + d.dy) && 
+                                  (d.dx !== -gh.dx || d.dy !== -gh.dy));
+                    
+                    if (dirs.length > 0) {
+                        // Simple directional AI with target
+                        dirs.sort((a, b) => {
+                            const da = Math.hypot(target.x - (tx + a.dx), target.y - (ty + a.dy));
+                            const db = Math.hypot(target.x - (tx + b.dx), target.y - (ty + b.dy));
+                            return da - db + (Math.random() - 0.5) * 2;
+                        });
+                        
+                        gh.dx = dirs[0].dx;
+                        gh.dy = dirs[0].dy;
+                    } else {
+                        // Dead end - reverse
+                        gh.dx = -gh.dx;
+                        gh.dy = -gh.dy;
                     }
                 }
-
-                // Collision
-                const dist = Math.hypot(g.x - this.pacman.x, g.y - this.pacman.y);
+                
+                // Collision with pacman
+                const dist = Math.hypot(gh.x - this.pacman.x, gh.y - this.pacman.y);
                 if (dist < 0.75) {
                     if (this.state.power) {
-                        this.state.score += 200;
-                        g.x = CONFIG.GHOST_START[i].x;
-                        g.y = CONFIG.GHOST_START[i].y;
+                        this.state.score += 200 * this.state.level;
+                        gh.x = CFG.GHOST_HOUSE[0].x;
+                        gh.y = CFG.GHOST_HOUSE[0].y;
                         this.audio.play('ghost');
                     } else {
-                        return true; // hit
+                        this.gameOver();
+                        return;
                     }
                 }
-                return false;
-            });
-
-            if (gh.some(h => h)) {
-                this.die();
             }
         }
-
-        die() {
-            this.audio.play('die');
-            this.state.lives--;
-            this.updateUI();
-            
-            if (this.state.lives <= 0) {
-                this.state.gameOver = true;
-                if (this.state.score > this.state.highScore) {
-                    this.state.highScore = this.state.score;
-                    localStorage.setItem('pacmanHi', this.state.highScore);
-                }
-                document.getElementById('finalScore').textContent = this.state.score;
-                document.getElementById('modal').classList.add('active');
-            } else {
-                setTimeout(() => {
-                    this.pacman.x = CONFIG.PAC_START.x;
-                    this.pacman.y = CONFIG.PAC_START.y;
-                    this.pacman.dx = 0; this.pacman.dy = 0;
-                    this.ghosts.forEach((g, i) => {
-                        g.x = CONFIG.GHOST_START[i].x;
-                        g.y = CONFIG.GHOST_START[i].y;
-                    });
-                }, 400);
-            }
+        
+        canMove(x, y) {
+            if (x < 0 || x >= CFG.COLS || y < 0 || y >= CFG.ROWS) return false;
+            return this.grid[y][x] !== 1;
         }
-
+        
         draw() {
             const ctx = this.ctx;
-            const T = CONFIG.TILE;
-
-            // Clear
+            const T = CFG.TILE;
+            
             ctx.fillStyle = '#000';
             ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
-
-            // Map
-            for(let y=0; y<CONFIG.ROWS; y++) {
-                for(let x=0; x<CONFIG.COLS; x++) {
+            
+            // Draw map
+            for (let y = 0; y < CFG.ROWS; y++) {
+                for (let x = 0; x < CFG.COLS; x++) {
                     const c = this.grid[y][x];
-                    const px = x*T, py = y*T;
+                    const px = x * T, py = y * T;
                     
                     if (c === 1) {
-                        ctx.fillStyle = CONFIG.COLORS.WALL;
+                        ctx.fillStyle = '#0a1628';
                         ctx.fillRect(px, py, T, T);
-                        ctx.strokeStyle = CONFIG.COLORS.WALL_GLOW;
-                        ctx.strokeRect(px+1, py+1, T-2, T-2);
+                        ctx.strokeStyle = 'rgba(0,255,255,0.15)';
+                        ctx.strokeRect(px + 1, py + 1, T - 2, T - 2);
                     } else if (c === 2) {
-                        ctx.fillStyle = CONFIG.COLORS.PELLET;
+                        ctx.fillStyle = '#00ffff';
                         ctx.beginPath();
-                        ctx.arc(px+T/2, py+T/2, 2.5, 0, Math.PI*2);
+                        ctx.arc(px + T / 2, py + T / 2, 2.5, 0, Math.PI * 2);
                         ctx.fill();
                     } else if (c === 3) {
-                        ctx.fillStyle = CONFIG.COLORS.POWER;
-                        ctx.shadowColor = CONFIG.COLORS.POWER;
+                        ctx.fillStyle = '#ff00ff';
+                        ctx.shadowColor = '#ff00ff';
                         ctx.shadowBlur = 10;
                         ctx.beginPath();
-                        ctx.arc(px+T/2, py+T/2, 5, 0, Math.PI*2);
+                        ctx.arc(px + T / 2, py + T / 2, 5, 0, Math.PI * 2);
                         ctx.fill();
                         ctx.shadowBlur = 0;
                     }
                 }
             }
-
-            // Ghosts
-            this.ghosts.forEach(g => {
-                ctx.fillStyle = g.scared ? CONFIG.COLORS.SCARED : g.color;
+            
+            // Draw ghosts
+            for (const gh of this.ghosts) {
+                ctx.fillStyle = gh.scared ? '#3366ff' : gh.color;
+                const gx = gh.x * T + T / 2;
+                const gy = gh.y * T + T / 2;
+                
                 ctx.beginPath();
-                const gx = g.x * T + T/2;
-                const gy = g.y * T + T/2;
-                ctx.arc(gx, gy-2, 8, Math.PI, 0);
-                ctx.lineTo(gx+8, gy+7);
-                ctx.lineTo(gx-8, gy+7);
+                ctx.arc(gx, gy - 2, 8, Math.PI, 0);
+                ctx.lineTo(gx + 8, gy + 6);
+                ctx.lineTo(gx - 8, gy + 6);
                 ctx.fill();
-                // Eyes
+                
                 ctx.fillStyle = '#fff';
                 ctx.beginPath();
-                ctx.arc(gx-3, gy-3, 2.5, 0, Math.PI*2);
-                ctx.arc(gx+3, gy-3, 2.5, 0, Math.PI*2);
+                ctx.arc(gx - 3, gy - 3, 2.5, 0, Math.PI * 2);
+                ctx.arc(gx + 3, gy - 3, 2.5, 0, Math.PI * 2);
                 ctx.fill();
-            });
-
-            // Pacman
-            const p = this.pacman;
-            const px = p.x * T + T/2;
-            const py = p.y * T + T/2;
+            }
             
-            let ang = 0;
-            if (p.dx > 0) ang = 0;
-            else if (p.dx < 0) ang = Math.PI;
-            else if (p.dy > 0) ang = Math.PI/2;
-            else if (p.dy < 0) ang = -Math.PI/2;
-
+            // Draw pacman
+            const p = this.pacman;
+            const px = p.x * T + T / 2;
+            const py = p.y * T + T / 2;
+            
+            let angle = 0;
+            if (p.dx > 0) angle = 0;
+            else if (p.dx < 0) angle = Math.PI;
+            else if (p.dy > 0) angle = Math.PI / 2;
+            else if (p.dy < 0) angle = -Math.PI / 2;
+            
             ctx.save();
             ctx.translate(px, py);
-            ctx.rotate(ang);
-            ctx.fillStyle = p.dash ? CONFIG.COLORS.PACMAN_DASH : CONFIG.COLORS.PACMAN;
+            ctx.rotate(angle);
+            ctx.fillStyle = p.dash ? '#fff' : '#ffff00';
             ctx.shadowColor = ctx.fillStyle;
-            ctx.shadowBlur = p.dash ? 15 : 10;
+            ctx.shadowBlur = p.dash ? 18 : 10;
             ctx.beginPath();
-            ctx.arc(0, 0, 8, 0.2*Math.PI, 1.8*Math.PI);
+            ctx.arc(0, 0, 8, p.mouthAngle * Math.PI, (2 - p.mouthAngle) * Math.PI);
             ctx.lineTo(0, 0);
             ctx.fill();
             ctx.restore();
+            
+            // Power indicator
+            if (this.state.power) {
+                ctx.fillStyle = `rgba(255, 0, 255, ${0.2 + this.state.powerTime / 12})`;
+                ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+            }
         }
-
+        
+        gameOver() {
+            this.audio.play('die');
+            this.state.lives--;
+            this.state.gameOver = true;
+            
+            if (this.state.lives <= 0) {
+                if (this.state.score > this.state.highScore) {
+                    this.state.highScore = this.state.score;
+                    this.save.set('highScore', this.state.highScore);
+                }
+                
+                document.getElementById('finalScore').textContent = this.state.score;
+                document.getElementById('modal').classList.add('active');
+            } else {
+                setTimeout(() => {
+                    this.pacman.x = CFG.PAC_START.x;
+                    this.pacman.y = CFG.PAC_START.y;
+                    this.pacman.dx = 0; this.pacman.dy = 0;
+                    
+                    this.ghosts.forEach((gh, i) => {
+                        gh.x = CFG.GHOST_HOUSE[i].x;
+                        gh.y = CFG.GHOST_HOUSE[i].y;
+                    });
+                    
+                    this.state.gameOver = false;
+                }, 500);
+            }
+            
+            this.updateUI();
+        }
+        
+        winGame() {
+            this.state.gameOver = true;
+            if (this.state.score > this.state.highScore) {
+                this.state.highScore = this.state.score;
+                this.save.set('highScore', this.state.highScore);
+            }
+            
+            document.getElementById('modalTitle').textContent = '🎉 G\'ALABA! 🎉';
+            document.getElementById('modalTitle').className = 'modal-title win';
+            document.getElementById('finalScore').textContent = this.state.score;
+            document.getElementById('modal').classList.add('active');
+        }
+        
+        dash() {
+            if (this.state.gameOver || this.pacman.dash || this.pacman.dashCooldown > 0) return;
+            
+            if (navigator.vibrate) navigator.vibrate(50);
+            
+            this.audio.play('dash');
+            this.pacman.dash = true;
+            this.pacman.dashCooldown = 1;
+            document.getElementById('dashInd').className = 'stat-dash active';
+            
+            setTimeout(() => {
+                this.pacman.dash = false;
+            }, 180);
+        }
+        
         updateUI() {
             document.getElementById('scoreNum').textContent = this.state.score;
             document.getElementById('livesNum').textContent = this.state.lives;
             document.getElementById('levelNum').textContent = this.state.level;
             document.getElementById('menuHighScore').textContent = 'REKORD: ' + this.state.highScore;
-
+            
             const dashEl = document.getElementById('dashInd');
             if (this.pacman.dashCooldown > 0) dashEl.className = 'stat-dash cooldown';
             else if (this.pacman.dash) dashEl.className = 'stat-dash active';
             else dashEl.className = 'stat-dash ready';
         }
-
+        
         loop(time) {
-            if (this.state.gameOver) return;
+            if (this.state.gameOver) {
+                requestAnimationFrame(t => this.loop(t));
+                return;
+            }
             
             const dt = Math.min(0.033, (time - this.lastTime) / 1000);
             this.lastTime = time;
-
-            if (this.state.power) {
-                this.state.powerTime -= dt;
-                if (this.state.powerTime <= 0) this.state.power = false;
-            }
-
-            if (this.pacman.dashCooldown > 0) {
-                this.pacman.dashCooldown -= dt;
-            }
-
+            
             this.movePacman(dt);
             this.moveGhosts(dt);
             this.draw();
-
+            
             requestAnimationFrame(t => this.loop(t));
         }
     }
 
     // ==================== INIT ====================
     document.addEventListener('DOMContentLoaded', () => {
-        // Loading
+        // Loading screen
         let progress = 0;
         const fill = document.getElementById('loadFill');
         const loadInt = setInterval(() => {
-            progress += Math.random()*15+10;
-            if (progress > 100) progress = 100;
+            progress += Math.random() * 15 + 10;
+            if (progress >= 100) progress = 100;
             fill.style.width = progress + '%';
             if (progress >= 100) {
                 clearInterval(loadInt);
@@ -668,34 +827,117 @@
                     document.getElementById('menu').classList.add('active');
                 }, 200);
             }
-        }, 60);
+        }, 50);
 
-        // Game
         const game = new Game();
 
-        // Start
+        // Menu buttons
         document.getElementById('btnStart').addEventListener('click', () => {
             game.audio.init();
-            game.start();
+            game.reset();
+            game.startLevel(1);
             document.getElementById('menu').classList.remove('active');
             document.getElementById('game').classList.add('active');
+            
+            if (navigator.vibrate) navigator.vibrate(30);
         });
 
-        // Restart
+        document.getElementById('btnHowto').addEventListener('click', () => {
+            document.getElementById('menu').classList.remove('active');
+            document.getElementById('howto').classList.add('active');
+        });
+
+        document.getElementById('btnBack').addEventListener('click', () => {
+            document.getElementById('howto').classList.remove('active');
+            document.getElementById('menu').classList.add('active');
+        });
+
+        document.getElementById('btnDownload').addEventListener('click', () => {
+            window.location.href = 'https://github.com/Xolericuz/nano-game/releases';
+        });
+
         document.getElementById('btnRestart').addEventListener('click', () => {
             document.getElementById('modal').classList.remove('active');
-            game.state.score = 0;
-            game.state.lives = 3;
-            game.loadLevel(1);
+            document.getElementById('modalTitle').textContent = 'GAME OVER';
+            document.getElementById('modalTitle').className = 'modal-title lose';
+            game.reset();
+            game.startLevel(1);
         });
 
-        // Download
-        document.getElementById('btnDownload').addEventListener('click', () => {
-            alert('APKni GitHub Releasesdan yuklab oling');
+        document.getElementById('btnMenu').addEventListener('click', () => {
+            document.getElementById('modal').classList.remove('active');
+            document.getElementById('modalTitle').textContent = 'GAME OVER';
+            document.getElementById('modalTitle').className = 'modal-title lose';
+            document.getElementById('game').classList.remove('active');
+            document.getElementById('menu').classList.add('active');
         });
+
+        // Controls
+        const setDir = (dx, dy) => {
+            if (game.state.gameOver) return;
+            if (dx !== 0 || dy !== 0) {
+                game.pacman.nextDx = dx;
+                game.pacman.nextDy = dy;
+            }
+        };
+
+        // D-Pad
+        document.querySelectorAll('.dpad-btn').forEach(btn => {
+            const handle = (on) => {
+                if (on) {
+                    btn.classList.add('pressed');
+                    setDir(parseInt(btn.dataset.dx), parseInt(btn.dataset.dy));
+                    game.audio.init();
+                } else {
+                    btn.classList.remove('pressed');
+                }
+            };
+            btn.addEventListener('touchstart', e => { e.preventDefault(); handle(true); }, {passive: false});
+            btn.addEventListener('touchend', e => handle(false));
+            btn.addEventListener('mousedown', e => { e.preventDefault(); handle(true); });
+            btn.addEventListener('mouseup', e => handle(false));
+            btn.addEventListener('mouseleave', e => handle(false));
+        });
+
+        // Dash button
+        document.getElementById('dashBtn').addEventListener('touchstart', e => { e.preventDefault(); game.dash(); }, {passive: false});
+        document.getElementById('dashBtn').addEventListener('mousedown', e => { e.preventDefault(); game.dash(); });
+
+        // Keyboard
+        document.addEventListener('keydown', e => {
+            game.audio.init();
+            if (game.state.gameOver) return;
+            
+            const k = e.key.toLowerCase();
+            if (k === 'arrowup' || k === 'w') setDir(0, -1);
+            else if (k === 'arrowdown' || k === 's') setDir(0, 1);
+            else if (k === 'arrowleft' || k === 'a') setDir(-1, 0);
+            else if (k === 'arrowright' || k === 'd') setDir(1, 0);
+            else if (k === 'shift') game.dash();
+        });
+
+        // Swipe controls
+        let touchStartX = 0, touchStartY = 0;
+        document.addEventListener('touchstart', e => {
+            touchStartX = e.touches[0].clientX;
+            touchStartY = e.touches[0].clientY;
+        }, {passive: true});
+        
+        document.addEventListener('touchend', e => {
+            const dx = e.changedTouches[0].clientX - touchStartX;
+            const dy = e.changedTouches[0].clientY - touchStartY;
+            
+            if (Math.abs(dx) > 30 || Math.abs(dy) > 30) {
+                if (Math.abs(dx) > Math.abs(dy)) {
+                    setDir(dx > 0 ? 1 : -1, 0);
+                } else {
+                    setDir(0, dy > 0 ? 1 : -1);
+                }
+                game.audio.init();
+            }
+        }, {passive: true});
     });
 
-    // PWA
     if ('serviceWorker' in navigator) {
         navigator.serviceWorker.register('sw.js').catch(() => {});
     }
