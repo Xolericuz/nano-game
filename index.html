@@ -3,421 +3,572 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>SUPER PAC-MAN X</title>
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="theme-color" content="#000000">
+    <meta name="description" content="SUPER PAC-MAN X - 100 Levels Premium Game">
+    <title>SUPER PAC-MAN X | 100 LEVELS</title>
+    <link rel="manifest" href="manifest.json">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        html, body {
-            height: 100%;
-            overflow: hidden;
-            background: #000;
-            font-family: Arial, sans-serif;
-            touch-action: none;
+        :root {
+            --c-cyan: #00ffff;
+            --c-magenta: #ff00ff;
+            --c-yellow: #ffff00;
+            --c-red: #ff3366;
+            --c-green: #00ff88;
+            --c-bg: #000000;
+            --c-panel: rgba(5, 15, 30, 0.95);
+            --glow-cyan: 0 0 20px #00ffff;
+            --glow-magenta: 0 0 20px #ff00ff;
         }
-        #gameContainer {
-            width: 100%;
-            height: 100%;
+
+        * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        html, body { height: 100%; overflow: hidden; background: var(--c-bg); touch-action: none; user-select: none; -webkit-user-select: none; font-family: 'Orbitron', sans-serif; }
+        
+        body {
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            background: radial-gradient(circle, #0a0a1a 0%, #000 100%);
+            background: radial-gradient(ellipse at 30% 20%, rgba(0,255,255,0.05) 0%, transparent 50%),
+                        radial-gradient(ellipse at 70% 80%, rgba(255,0,255,0.05) 0%, transparent 50%),
+                        linear-gradient(180deg, #000 0%, #050a15 50%, #000 100%);
         }
-        #header {
-            display: flex;
-            justify-content: space-between;
-            width: 90%;
-            max-width: 400px;
-            padding: 10px 15px;
-            background: rgba(0,40,80,0.8);
-            border: 1px solid #0ff;
-            border-radius: 10px;
-            margin-bottom: 10px;
-            color: #fff;
-            font-size: 14px;
+
+        /* SCREENS */
+        .screen { position: fixed; top: 0; left: 0; width: 100%; height: 100%; display: none; flex-direction: column; align-items: center; justify-content: center; }
+        .screen.active { display: flex; }
+        .screen.hidden { display: none; }
+
+        /* LOADING */
+        #loading { background: var(--c-bg); z-index: 1000; }
+        .loader-title { font-size: 2.5rem; font-weight: 900; background: linear-gradient(90deg, var(--c-cyan), var(--c-magenta)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; animation: pulse 1s infinite; }
+        @keyframes pulse { 0%,100%{transform:scale(1)} 50%{transform:scale(1.05)} }
+        .loader-bar { width: 200px; height: 4px; background: rgba(255,255,255,0.1); border-radius: 2px; margin-top: 25px; overflow: hidden; }
+        .loader-fill { height: 100%; background: linear-gradient(90deg, var(--c-cyan), var(--c-magenta)); width: 0%; transition: width 0.2s; }
+
+        /* MENU */
+        #menu { gap: 20px; padding: 20px; }
+        .game-title { font-size: 2.2rem; font-weight: 900; text-align: center; background: linear-gradient(90deg, var(--c-cyan), var(--c-magenta), var(--c-yellow)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; animation: rainbow 4s linear infinite; background-size: 200% auto; }
+        @keyframes rainbow { 0%{background-position:0%} 100%{background-position:200%} }
+        .game-version { color: rgba(255,255,255,0.4); font-size: 0.8rem; }
+        .high-score { font-size: 1.2rem; color: var(--c-yellow); text-shadow: var(--glow-cyan); }
+        .menu-btn { width: 100%; max-width: 250px; padding: 16px 30px; font-size: 1.1rem; font-weight: 700; font-family: 'Orbitron', sans-serif; text-transform: uppercase; letter-spacing: 2px; border-radius: 12px; cursor: pointer; transition: all 0.2s; }
+        .menu-btn.primary { background: linear-gradient(135deg, var(--c-cyan), #0088aa); color: #000; border: none; }
+        .menu-btn.secondary { background: transparent; color: var(--c-cyan); border: 2px solid var(--c-cyan); margin-top: 10px; }
+        .menu-btn:hover, .menu-btn:active { transform: scale(1.03); box-shadow: var(--glow-cyan); }
+        .menu-btn.secondary:hover { background: var(--c-cyan); color: #000; }
+
+        /* GAME UI */
+        #game { padding: 12px; justify-content: flex-start; padding-top: 15px; }
+        .game-header { display: flex; justify-content: space-between; align-items: center; width: 100%; max-width: 400px; background: var(--c-panel); padding: 12px 16px; border-radius: 12px; border: 1px solid rgba(0,255,255,0.3); margin-bottom: 10px; box-shadow: 0 4px 20px rgba(0,255,255,0.1); }
+        .level-badge { display: flex; align-items: center; gap: 6px; font-size: 0.85rem; color: var(--c-yellow); }
+        .level-badge span { background: linear-gradient(135deg, #ff8800, #ffaa00); padding: 3px 8px; border-radius: 6px; font-weight: 700; }
+        .stats { display: flex; gap: 14px; }
+        .stat { display: flex; align-items: center; gap: 5px; font-size: 0.9rem; }
+        .stat-score { color: var(--c-cyan); }
+        .stat-lives { color: var(--c-red); }
+        .stat-dash { width: 20px; height: 20px; border-radius: 4px; background: var(--c-cyan); transition: all 0.3s; }
+        .stat-dash.ready { box-shadow: 0 0 12px var(--c-cyan); }
+        .stat-dash.cooldown { background: #1a2a3a; opacity: 0.5; box-shadow: none; }
+        .stat-dash.active { background: #fff; box-shadow: 0 0 20px #fff, 0 0 30px var(--c-cyan); }
+
+        canvas { width: 100%; max-width: 380px; aspect-ratio: 1; background: #000; border-radius: 10px; border: 2px solid rgba(0,255,255,0.25); box-shadow: 0 0 30px rgba(0,255,255,0.15), inset 0 0 50px rgba(0,0,0,0.8); }
+
+        /* MOBILE CONTROLS */
+        .mobile-controls { display: none; width: 100%; max-width: 400px; justify-content: space-between; align-items: center; margin-top: 12px; }
+        .dpad { display: grid; grid-template-columns: repeat(3, 50px); grid-template-rows: repeat(3, 50px); gap: 5px; }
+        .dpad-btn { background: rgba(0,30,60,0.8); border: 2px solid rgba(0,255,255,0.4); border-radius: 10px; color: var(--c-cyan); font-size: 20px; display: flex; align-items: center; justify-content: center; box-shadow: inset 0 0 15px rgba(0,0,0,0.5); transition: 0.1s; }
+        .dpad-btn:active, .dpad-btn.pressed { background: rgba(0,255,255,0.25); box-shadow: 0 0 15px var(--c-cyan); transform: scale(0.95); }
+        .dpad-btn:nth-child(1) { grid-area: 1/2; }
+        .dpad-btn:nth-child(2) { grid-area: 2/1; }
+        .dpad-btn:nth-child(3) { grid-area: 2/3; }
+        .dpad-btn:nth-child(4) { grid-area: 3/2; }
+
+        .dash-btn { width: 70px; height: 70px; border-radius: 50%; background: linear-gradient(145deg, var(--c-magenta), #8800aa); border: 2px solid #fff; color: #fff; font-size: 0.7rem; font-weight: 700; letter-spacing: 1px; box-shadow: 0 0 20px var(--c-magenta); }
+        .dash-btn:active { transform: scale(0.9); box-shadow: 0 0 30px var(--c-magenta); }
+
+        /* MODAL */
+        .modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,5,12,0.92); backdrop-filter: blur(10px); display: none; flex-direction: column; align-items: center; justify-content: center; z-index: 100; }
+        .modal.active { display: flex; animation: fadeIn 0.3s; }
+        @keyframes fadeIn { from{opacity:0} to{opacity:1} }
+        .modal-card { background: var(--c-panel); padding: 30px 40px; border-radius: 20px; border: 2px solid var(--c-cyan); box-shadow: 0 0 40px var(--c-cyan); text-align: center; max-width: 90%; }
+        .modal-title { font-size: 1.8rem; font-weight: 900; margin-bottom: 15px; }
+        .modal-title.win { background: linear-gradient(90deg, var(--c-green), var(--c-cyan)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .modal-title.lose { color: var(--c-red); text-shadow: 0 0 15px var(--c-red); }
+        .modal-score { font-size: 1.2rem; margin-bottom: 25px; color: rgba(255,255,255,0.7); }
+        .modal-score strong { color: var(--c-cyan); font-size: 1.5rem; }
+
+        /* RESPONSIVE */
+        @media (max-width: 450px) {
+            .mobile-controls { display: flex; }
+            .game-title { font-size: 1.8rem; }
+            .game-header { padding: 10px 12px; }
+            .stat, .level-badge { font-size: 0.75rem; }
         }
-        #score { color: #0ff; }
-        #lives { color: #f33; }
-        #level { color: #ff0; }
-        canvas {
-            background: #000;
-            border: 2px solid #0ff;
-            border-radius: 8px;
-            max-width: 90%;
-        }
-        #controls {
-            display: none;
-            width: 90%;
-            max-width: 400px;
-            justify-content: space-between;
-            margin-top: 15px;
-        }
-        .dpad {
-            display: grid;
-            grid-template-columns: repeat(3, 50px);
-            gap: 5px;
-        }
-        .dpad button {
-            width: 50px;
-            height: 50px;
-            background: rgba(0,40,80,0.8);
-            border: 2px solid #0ff;
-            border-radius: 8px;
-            color: #0ff;
-            font-size: 20px;
-            cursor: pointer;
-        }
-        .dpad button:active { background: #0ff; color: #000; }
-        #dashBtn {
-            width: 70px;
-            height: 70px;
-            border-radius: 50%;
-            background: linear-gradient(#f0f, #808);
-            border: 2px solid #fff;
-            color: #fff;
-            font-weight: bold;
-            cursor: pointer;
-        }
-        #menuScreen {
-            position: fixed;
-            top: 0; left: 0;
-            width: 100%; height: 100%;
-            background: rgba(0,0,0,0.95);
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            color: #fff;
-            gap: 20px;
-            z-index: 10;
-        }
-        #menuScreen h1 {
-            font-size: 32px;
-            background: linear-gradient(90deg, #0ff, #f0f, #ff0);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-        }
-        #menuScreen button {
-            padding: 15px 40px;
-            font-size: 18px;
-            background: linear-gradient(#0ff, #088);
-            border: none;
-            border-radius: 10px;
-            color: #000;
-            font-weight: bold;
-            cursor: pointer;
-        }
-        #gameOverModal {
-            position: fixed;
-            top: 0; left: 0;
-            width: 100%; height: 100%;
-            background: rgba(0,0,0,0.9);
-            display: none;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            color: #fff;
-            gap: 20px;
-            z-index: 20;
-        }
-        #gameOverModal h2 { font-size: 36px; color: #f33; }
-        #gameOverModal p { font-size: 24px; }
-        @media (max-width: 500px) { #controls { display: flex; } }
     </style>
 </head>
 <body>
-    <div id="menuScreen">
-        <h1>SUPER PAC-MAN X</h1>
-        <p id="highScore">HIGH: 0</p>
-        <button onclick="startGame()">PLAY</button>
+    <!-- LOADING -->
+    <div id="loading" class="screen active">
+        <div class="loader-title">PAC-MAN X</div>
+        <div class="loader-bar"><div class="loader-fill" id="loadFill"></div></div>
     </div>
-    
-    <div id="gameContainer">
-        <div id="header">
-            <span id="level">LEVEL 1</span>
-            <span id="score">SCORE: 0</span>
-            <span id="lives">❤❤❤</span>
+
+    <!-- MENU -->
+    <div id="menu" class="screen">
+        <div class="game-title">SUPER PAC-MAN X</div>
+        <div class="game-version">100 BOSQICH | PREMIUM</div>
+        <div class="high-score" id="menuHighScore">REKORD: 0</div>
+        <button class="menu-btn primary" id="btnStart">▶ O'YNA</button>
+        <button class="menu-btn secondary" id="btnDownload">⬇ APK YUKLAB OLISH</button>
+    </div>
+
+    <!-- GAME -->
+    <div id="game" class="screen">
+        <div class="game-header">
+            <div class="level-badge">LEVEL <span id="levelNum">1</span></div>
+            <div class="stats">
+                <div class="stat"><span>⭐</span><span class="stat-score" id="scoreNum">0</span></div>
+                <div class="stat"><span>❤️</span><span class="stat-lives" id="livesNum">3</span></div>
+                <div class="stat"><span>⚡</span><div class="stat-dash ready" id="dashInd"></div></div>
+            </div>
         </div>
         <canvas id="gameCanvas"></canvas>
-        <div id="controls">
+        <div class="mobile-controls">
             <div class="dpad">
-                <button onclick="setDir(0,-1)">▲</button>
-                <button onclick="setDir(-1,0)">◀</button>
-                <button onclick="setDir(1,0)">▶</button>
-                <button onclick="setDir(0,1)">▼</button>
+                <button class="dpad-btn" data-dx="0" data-dy="-1">▲</button>
+                <button class="dpad-btn" data-dx="-1" data-dy="0">◀</button>
+                <button class="dpad-btn" data-dx="1" data-dy="0">▶</button>
+                <button class="dpad-btn" data-dx="0" data-dy="1">▼</button>
             </div>
-            <button id="dashBtn" onclick="dash()">DASH</button>
+            <button class="dash-btn" id="dashBtn">DASH</button>
         </div>
     </div>
 
-    <div id="gameOverModal">
-        <h2>GAME OVER</h2>
-        <p>SCORE: <span id="finalScore">0</span></p>
-        <button onclick="restart()">RESTART</button>
+    <!-- MODAL -->
+    <div id="modal" class="modal">
+        <div class="modal-card">
+            <div class="modal-title lose" id="modalTitle">GAME OVER</div>
+            <div class="modal-score">Ball: <strong id="finalScore">0</strong></div>
+            <button class="menu-btn primary" id="btnRestart">QAYTA O'YNA</button>
+        </div>
     </div>
 
     <script>
-        const canvas = document.getElementById('gameCanvas');
-        const ctx = canvas.getContext('2d');
-        
-        const TILE = 20;
-        const COLS = 18;
-        const ROWS = 18;
-        
-        canvas.width = COLS * TILE;
-        canvas.height = ROWS * TILE;
+    // ==================== SUPER PAC-MAN X ====================
+    // Premium Mobile Edition
+    
+    const CONFIG = {
+        TILE: 20,
+        COLS: 18,
+        ROWS: 18,
+        TOTAL_LEVELS: 100,
+        PAC_START: { x: 9, y: 13 + 0.5 },
+        GHOST_START: [{x:8,y:7.5},{x:10,y:7.5},{x:8,y:8.5},{x:10,y:8.5}],
+        COLORS: {
+            WALL: '#0a1628',
+            WALL_GLOW: 'rgba(0,255,255,0.15)',
+            PELLET: '#00ffff',
+            POWER: '#ff00ff',
+            PACMAN: '#ffff00',
+            PACMAN_DASH: '#ffffff',
+            GHOST: ['#ff3366','#ff99cc','#00ff88','#ffaa00'],
+            SCARED: '#3366ff'
+        }
+    };
 
-        // 0=empty, 1=wall, 2=pellet, 3=power
-        const MAP = [
-            [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
-            [1,2,2,2,2,2,2,2,2,1,2,2,2,2,2,2,2,1],
-            [1,2,1,1,2,1,1,1,2,1,2,1,1,1,2,1,1,2,1],
-            [1,3,1,1,2,1,1,1,2,1,2,1,1,1,2,1,1,2,1],
-            [1,2,1,1,2,1,1,1,2,1,2,1,1,1,2,1,1,2,1],
-            [1,2,2,2,2,2,2,2,2,1,2,2,2,2,2,2,2,1],
-            [1,2,1,1,2,1,2,1,1,1,1,2,1,2,1,1,2,1],
-            [1,2,1,1,2,1,2,1,1,1,1,2,1,2,1,1,2,1],
-            [1,2,2,2,2,2,2,2,2,0,2,2,2,2,2,2,2,1],
-            [1,1,1,1,2,1,1,1,1,1,1,1,2,1,1,1,1,1],
-            [1,2,2,2,2,1,2,2,2,1,2,2,2,1,2,2,2,1],
-            [1,2,1,1,1,1,1,1,2,1,2,1,1,1,1,1,1,2,1],
-            [1,2,1,1,1,1,1,1,2,1,2,1,1,1,1,1,1,2,1],
-            [1,2,2,2,2,2,2,2,2,1,2,2,2,2,2,2,2,1],
-            [1,2,1,1,2,1,1,1,1,1,1,1,1,1,2,1,1,2,1],
-            [1,2,1,1,2,1,1,1,1,1,1,1,1,1,2,1,1,2,1],
-            [1,2,2,2,2,1,1,1,2,1,2,1,1,1,2,2,2,2,1],
-            [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1]
-        ];
+    // Classic Map Design
+    const MAP_TEMPLATE = [
+        [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+        [1,2,2,2,2,2,2,2,2,1,2,2,2,2,2,2,2,1],
+        [1,2,1,1,2,1,1,1,2,1,2,1,1,1,2,1,1,2,1],
+        [1,3,1,1,2,1,1,1,2,1,2,1,1,1,2,1,1,2,1],
+        [1,2,1,1,2,1,1,1,2,1,2,1,1,1,2,1,1,2,1],
+        [1,2,2,2,2,2,2,2,2,1,2,2,2,2,2,2,2,1],
+        [1,2,1,1,2,1,2,1,1,1,1,2,1,2,1,1,2,1],
+        [1,2,1,1,2,1,2,1,1,1,1,2,1,2,1,1,2,1],
+        [1,2,2,2,2,2,2,2,2,0,2,2,2,2,2,2,2,1],
+        [1,1,1,1,2,1,1,1,1,1,1,1,2,1,1,1,1,1],
+        [1,2,2,2,2,1,2,2,2,1,2,2,2,1,2,2,2,1],
+        [1,2,1,1,1,1,1,1,2,1,2,1,1,1,1,1,1,2,1],
+        [1,2,1,1,1,1,1,1,2,1,2,1,1,1,1,1,1,2,1],
+        [1,2,2,2,2,2,2,2,2,1,2,2,2,2,2,2,2,1],
+        [1,2,1,1,2,1,1,1,1,1,1,1,1,1,2,1,1,2,1],
+        [1,2,1,1,2,1,1,1,1,1,1,1,1,1,2,1,1,2,1],
+        [1,2,2,2,2,1,1,1,2,1,2,1,1,1,2,2,2,2,1],
+        [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1]
+    ];
 
-        let grid = [];
-        let score = 0, level = 1, lives = 3;
-        let highScore = parseInt(localStorage.getItem('pacHi') || '0');
-        let gameOver = false;
-        let powerMode = false, powerTime = 0;
-        
-        let pacman = { x: 9, y: 14, dir: {x:0,y:0}, next: {x:0,y:0}, dash: false, dashCooldown: 0 };
-        let ghosts = [];
-        
-        let lastTime = 0;
-        let audioCtx = null;
-
-        function initAudio() {
-            if (!audioCtx) {
-                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    // ==================== AUDIO ====================
+    class Audio {
+        constructor() { this.ctx = null; }
+        init() {
+            if (!this.ctx) {
+                this.ctx = new (window.AudioContext || window.webkitAudioContext)();
             }
-            if (audioCtx.state === 'suspended') audioCtx.resume();
+            if (this.ctx.state === 'suspended') this.ctx.resume();
         }
-
-        function playTone(freq, duration, type = 'sine', vol = 0.1) {
-            if (!audioCtx) return;
-            const osc = audioCtx.createOscillator();
-            const gain = audioCtx.createGain();
+        play(type) {
+            if (!this.ctx) return;
+            const osc = this.ctx.createOscillator();
+            const gain = this.ctx.createGain();
             osc.connect(gain);
-            gain.connect(audioCtx.destination);
-            osc.type = type;
-            osc.frequency.value = freq;
-            gain.gain.setValueAtTime(vol, audioCtx.currentTime);
-            gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + duration);
-            osc.start();
-            osc.stop(audioCtx.currentTime + duration);
+            gain.connect(this.ctx.destination);
+            const now = this.ctx.currentTime;
+            
+            switch(type) {
+                case 'eat':
+                    osc.frequency.setValueAtTime(800, now);
+                    osc.frequency.exponentialRampToValueAtTime(1100, now + 0.06);
+                    gain.gain.setValueAtTime(0.08, now);
+                    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.06);
+                    osc.start(now); osc.stop(now + 0.06);
+                    break;
+                case 'power':
+                    osc.type = 'square';
+                    osc.frequency.setValueAtTime(400, now);
+                    osc.frequency.linearRampToValueAtTime(550, now + 0.15);
+                    gain.gain.setValueAtTime(0.1, now);
+                    osc.start(now); osc.stop(now + 0.3);
+                    break;
+                case 'dash':
+                    osc.type = 'sawtooth';
+                    osc.frequency.setValueAtTime(150, now);
+                    osc.frequency.exponentialRampToValueAtTime(500, now + 0.1);
+                    gain.gain.setValueAtTime(0.15, now);
+                    osc.start(now); osc.stop(now + 0.1);
+                    break;
+                case 'die':
+                    osc.type = 'sawtooth';
+                    osc.frequency.setValueAtTime(300, now);
+                    osc.frequency.exponentialRampToValueAtTime(50, now + 0.4);
+                    gain.gain.setValueAtTime(0.2, now);
+                    osc.start(now); osc.stop(now + 0.4);
+                    break;
+                case 'ghost':
+                    osc.type = 'triangle';
+                    osc.frequency.setValueAtTime(500, now);
+                    osc.frequency.exponentialRampToValueAtTime(900, now + 0.1);
+                    gain.gain.setValueAtTime(0.12, now);
+                    osc.start(now); osc.stop(now + 0.1);
+                    break;
+                case 'level':
+                    [523, 659, 784].forEach((f, i) => {
+                        const o = this.ctx.createOscillator();
+                        const g = this.ctx.createGain();
+                        o.connect(g); g.connect(this.ctx.destination);
+                        o.frequency.value = f;
+                        g.gain.setValueAtTime(0.12, now + i*0.08);
+                        g.gain.exponentialRampToValueAtTime(0.01, now + i*0.08 + 0.1);
+                        o.start(now + i*0.08); o.stop(now + i*0.08 + 0.1);
+                    });
+                    break;
+            }
+        }
+    }
+
+    // ==================== GAME ====================
+    class Game {
+        constructor() {
+            this.canvas = document.getElementById('gameCanvas');
+            this.ctx = this.canvas.getContext('2d');
+            this.audio = new Audio();
+            
+            const W = CONFIG.COLS * CONFIG.TILE;
+            const H = CONFIG.ROWS * CONFIG.TILE;
+            this.canvas.width = W;
+            this.canvas.height = H;
+            
+            this.state = { level: 1, score: 0, lives: 3, highScore: parseInt(localStorage.getItem('pacmanHi') || '0'), gameOver: false, power: false, powerTime: 0 };
+            this.pacman = null;
+            this.ghosts = [];
+            this.grid = [];
+            this.lastTime = 0;
         }
 
-        function init() {
-            grid = MAP.map(row => [...row]);
-            
-            ghosts = [
-                { x: 8, y: 7, color: '#f33', dir: {x:1,y:0}, type: 'chaser', speed: 80 },
-                { x: 10, y: 7, color: '#fcf', dir: {x:-1,y:0}, type: 'ambush', speed: 75 },
-                { x: 8, y: 8, color: '#0f0', dir: {x:1,y:0}, type: 'random', speed: 70 },
-                { x: 10, y: 8, color: '#fa0', dir: {x:-1,y:0}, type: 'timid', speed: 75 }
-            ];
-            
-            pacman = { x: 9, y: 14, dir: {x:0,y:0}, next: {x:0,y:0}, dash: false, dashCooldown: 0 };
-            
-            score = 0; lives = 3; level = 1; gameOver = false; powerMode = false;
-            
-            updateUI();
-            document.getElementById('menuScreen').style.display = 'none';
-            document.getElementById('gameOverModal').style.display = 'none';
-            
-            requestAnimationFrame(loop);
+        start() {
+            this.loadLevel(1);
+            this.bindControls();
+            this.updateUI();
+            requestAnimationFrame(t => this.loop(t));
         }
 
-        function setDir(x, y) {
-            initAudio();
-            pacman.next = { x, y };
-        }
-
-        function dash() {
-            initAudio();
-            if (gameOver || pacman.dash || pacman.dashCooldown > 0) return;
-            pacman.dash = true;
-            pacman.dashCooldown = 1;
-            setTimeout(() => { pacman.dash = false; }, 200);
-        }
-
-        function canMove(x, y) {
-            if (x < 0 || x >= COLS || y < 0 || y >= ROWS) return false;
-            return grid[y][x] !== 1;
-        }
-
-        function movePacman(delta) {
-            const speed = 120 + level * 2;
-            const step = speed * delta * (pacman.dash ? 2 : 1);
-
-            if (pacman.next.x !== 0 || pacman.next.y !== 0) {
-                if (canMove(pacman.x + pacman.next.x, pacman.y + pacman.next.y)) {
-                    pacman.dir = { ...pacman.next };
+        loadLevel(lvl) {
+            this.grid = MAP_TEMPLATE.map(r => [...r]);
+            
+            // Find center for power pellet
+            let center = 0;
+            for(let y=0; y<CONFIG.ROWS; y++) {
+                for(let x=0; x<CONFIG.COLS; x++) {
+                    if(this.grid[y][x] === 0) center++;
                 }
             }
 
-            if (pacman.dir.x === 0 && pacman.dir.y === 0) return;
+            this.state.level = lvl;
+            this.state.gameOver = false;
+            this.state.power = false;
+            this.state.powerTime = 0;
+            
+            const spd = 130 + lvl * 2;
+            
+            this.pacman = {
+                ...CONFIG.PAC_START,
+                dx: 0, dy: 0,
+                nextDx: 0, nextDy: 0,
+                speed: spd,
+                dash: false, dashCooldown: 0
+            };
 
-            pacman.x += pacman.dir.x * step / TILE;
-            pacman.y += pacman.dir.y * step / TILE;
+            this.ghosts = CONFIG.GHOST_START.map((p, i) => ({
+                ...p,
+                dx: i%2?1:-1, dy: 0,
+                speed: 70 + lvl * 1.2,
+                color: CONFIG.COLORS.GHOST[i],
+                scared: false,
+                type: ['chaser','ambush','random','timid'][i]
+            }));
 
-            const tx = Math.floor(pacman.x + 0.5);
-            const ty = Math.floor(pacman.y + 0.5);
+            this.audio.play('level');
+            this.updateUI();
+        }
+
+        bindControls() {
+            // Keyboard
+            document.addEventListener('keydown', e => {
+                this.audio.init();
+                if (this.state.gameOver) return;
+                const k = e.key.toLowerCase();
+                if (k === 'arrowup' || k === 'w') this.pacman.nextDy = -1;
+                else if (k === 'arrowdown' || k === 's') this.pacman.nextDy = 1;
+                else if (k === 'arrowleft' || k === 'a') this.pacman.nextDx = -1;
+                else if (k === 'arrowright' || k === 'd') this.pacman.nextDx = 1;
+                else if (k === 'shift') this.dash();
+            });
+
+            // Mobile D-Pad
+            document.querySelectorAll('.dpad-btn').forEach(btn => {
+                const setDir = (on) => {
+                    if (on) {
+                        btn.classList.add('pressed');
+                        this.pacman.nextDx = parseInt(btn.dataset.dx);
+                        this.pacman.nextDy = parseInt(btn.dataset.dy);
+                    } else {
+                        btn.classList.remove('pressed');
+                    }
+                };
+                btn.addEventListener('touchstart', e => { e.preventDefault(); setDir(true); this.audio.init(); }, {passive:false});
+                btn.addEventListener('touchend', e => setDir(false));
+                btn.addEventListener('mousedown', e => { e.preventDefault(); setDir(true); this.audio.init(); });
+                btn.addEventListener('mouseup', e => setDir(false));
+                btn.addEventListener('mouseleave', e => setDir(false));
+            });
+
+            // Dash Button
+            const dashBtn = document.getElementById('dashBtn');
+            const doDash = (e) => { e.preventDefault(); this.dash(); };
+            dashBtn.addEventListener('touchstart', doDash, {passive:false});
+            dashBtn.addEventListener('mousedown', doDash);
+        }
+
+        dash() {
+            if (this.state.gameOver || this.pacman.dash || this.pacman.dashCooldown > 0) return;
+            this.audio.play('dash');
+            this.pacman.dash = true;
+            this.pacman.dashCooldown = 1;
+            document.getElementById('dashInd').className = 'stat-dash active';
+            setTimeout(() => { this.pacman.dash = false; }, 180);
+        }
+
+        canMove(x, y) {
+            if (x < 0 || x >= CONFIG.COLS || y < 0 || y >= CONFIG.ROWS) return false;
+            return this.grid[y][x] !== 1;
+        }
+
+        movePacman(dt) {
+            const p = this.pacman;
+            const spd = p.speed * (p.dash ? 2.2 : 1);
+            const step = spd * dt;
+
+            // Change direction if possible
+            if (p.nextDx !== 0 || p.nextDy !== 0) {
+                const tx = Math.floor(p.x);
+                const ty = Math.floor(p.y);
+                if (this.canMove(tx + p.nextDx, ty + p.nextDy)) {
+                    p.dx = p.nextDx;
+                    p.dy = p.nextDy;
+                }
+            }
+
+            if (p.dx === 0 && p.dy === 0) return;
+
+            // Move
+            p.x += p.dx * step / CONFIG.TILE;
+            p.y += p.dy * step / CONFIG.TILE;
+
+            // Snap to grid
+            const tx = Math.floor(p.x + 0.5);
+            const ty = Math.floor(p.y + 0.5);
             const cx = tx + 0.5;
             const cy = ty + 0.5;
 
-            const dist = Math.abs(pacman.dir.x > 0 ? cx - pacman.x : pacman.dir.y > 0 ? cy - pacman.y : 0);
+            const dist = Math.abs(p.dx > 0 ? cx - p.x : p.dy > 0 ? cy - p.y : 0);
 
             if (dist < 0.5) {
-                pacman.x = cx;
-                pacman.y = cy;
-                tx = Math.floor(pacman.x);
-                ty = Math.floor(pacman.y);
+                p.x = cx;
+                p.y = cy;
 
-                if (canMove(tx + pacman.next.x, ty + pacman.next.y) && (pacman.next.x !== pacman.dir.x || pacman.next.y !== pacman.dir.y)) {
-                    pacman.dir = { ...pacman.next };
+                // Check next turn
+                if (this.canMove(tx + p.nextDx, ty + p.nextDy) && (p.nextDx !== p.dx || p.nextDy !== p.dy)) {
+                    p.dx = p.nextDx;
+                    p.dy = p.nextDy;
                 }
-                if (!canMove(tx + pacman.dir.x, ty + pacman.dir.y)) {
-                    pacman.dir = { x: 0, y: 0 };
+                // Check forward
+                if (!this.canMove(tx + p.dx, ty + p.dy)) {
+                    p.dx = 0; p.dy = 0;
                 }
             }
 
-            pacman.x = Math.max(0.5, Math.min(COLS - 0.5, pacman.x));
-            pacman.y = Math.max(0.5, Math.min(ROWS - 0.5, pacman.y));
+            // Bounds
+            p.x = Math.max(0.5, Math.min(CONFIG.COLS-0.5, p.x));
+            p.y = Math.max(0.5, Math.min(CONFIG.ROWS-0.5, p.y));
 
-            // Eat
-            tx = Math.floor(pacman.x);
-            ty = Math.floor(pacman.y);
+            // Eat pellet
+            const ex = Math.floor(p.x);
+            const ey = Math.floor(p.y);
+            const tile = this.grid[ey]?.[ex];
             
-            if (grid[ty] && (grid[ty][tx] === 2 || grid[ty][tx] === 3)) {
-                if (grid[ty][tx] === 2) { score += 10; playTone(800, 0.05); }
-                else { score += 50; playTone(400, 0.2, 'square'); powerMode = true; powerTime = 6; }
-                grid[ty][tx] = 0;
-                updateUI();
+            if (tile === 2) {
+                this.state.score += 10;
+                this.grid[ey][ex] = 0;
+                this.audio.play('eat');
+            } else if (tile === 3) {
+                this.state.score += 50;
+                this.grid[ey][ex] = 0;
+                this.state.power = true;
+                this.state.powerTime = 6;
+                this.audio.play('power');
             }
 
-            // Win
+            // Win?
             let pellets = 0;
-            for (let r = 0; r < ROWS; r++) {
-                for (let c = 0; c < COLS; c++) {
-                    if (grid[r][c] === 2 || grid[r][c] === 3) pellets++;
+            for(let y=0; y<CONFIG.ROWS; y++) {
+                for(let x=0; x<CONFIG.COLS; x++) {
+                    if (this.grid[y][x] === 2 || this.grid[y][x] === 3) pellets++;
                 }
             }
             if (pellets === 0) {
-                level++;
-                init();
+                this.loadLevel(this.state.level + 1 > CONFIG.TOTAL_LEVELS ? 1 : this.state.level + 1);
             }
+
+            this.updateUI();
         }
 
-        function moveGhosts(delta) {
-            const speed = 60 + level;
+        moveGhosts(dt) {
+            const gh = this.ghosts.map((g, i) => {
+                g.scared = this.state.power;
+                
+                const target = this.state.power ? {x: Math.random()*CONFIG.COLS, y: Math.random()*CONFIG.ROWS} :
+                            g.type === 'chaser' ? {x: this.pacman.x, y: this.pacman.y} :
+                            g.type === 'ambush' ? {x: this.pacman.x + this.pacman.dx*3, y: this.pacman.y + this.pacman.dy*3} :
+                            g.type === 'random' ? {x: g.x, y: g.y} :
+                            Math.hypot(g.x-this.pacman.x, g.y-this.pacman.y) > 6 ? {x: this.pacman.x, y: this.pacman.y} : {x:1,y:1};
 
-            ghosts.forEach(gh => {
-                let target;
-                if (powerMode) {
-                    target = { x: Math.random() * COLS, y: Math.random() * ROWS };
-                } else if (gh.type === 'chaser') {
-                    target = { x: pacman.x, y: pacman.y };
-                } else if (gh.type === 'ambush') {
-                    target = { x: pacman.x + pacman.dir.x * 3, y: pacman.y + pacman.dir.y * 3 };
-                } else if (gh.type === 'random') {
-                    if (Math.random() < 0.02) {
-                        gh.dir = [{x:1,y:0}, {x:-1,y:0}, {x:0,y:1}, {x:0,y:-1}][Math.floor(Math.random()*4)];
-                    }
-                    target = { x: gh.x, y: gh.y };
-                } else {
-                    target = Math.hypot(gh.x - pacman.x, gh.y - pacman.y) > 6 ? { x: pacman.x, y: pacman.y } : { x: 1, y: 1 };
-                }
+                const step = g.speed * dt / CONFIG.TILE;
+                g.x += g.dx * step;
+                g.y += g.dy * step;
 
-                const step = speed * delta;
-                gh.x += gh.dir.x * step / TILE;
-                gh.y += gh.dir.y * step / TILE;
+                const tx = Math.floor(g.x + 0.5);
+                const ty = Math.floor(g.y + 0.5);
 
-                const tx = Math.floor(gh.x + 0.5);
-                const ty = Math.floor(gh.y + 0.5);
-
-                if (tx !== Math.floor(gh.x) || ty !== Math.floor(gh.y)) {
-                    const dirs = [{x:1,y:0}, {x:-1,y:0}, {x:0,y:1}, {x:0,y:-1}].filter(d => canMove(tx + d.x, ty + d.y));
-                    if (dirs.length > 0) {
-                        dirs.sort((a,b) => Math.hypot(target.x - (tx+a.x), target.y - (ty+a.y)) - Math.hypot(target.x - (tx+b.x), target.y - (ty+b.y)));
-                        gh.dir = dirs[0];
+                if (tx !== Math.floor(g.x) || ty !== Math.floor(g.y)) {
+                    const dirs = [{x:1,y:0},{x:-1,y:0},{x:0,y:1},{x:0,y:-1}].filter(d => this.canMove(tx+d.x, ty+d.y));
+                    if (dirs.length) {
+                        dirs.sort((a,b) => Math.hypot(target.x-(tx+a.x), target.y-(ty+a.y)) - Math.hypot(target.x-(tx+b.x), target.y-(ty+b.y)));
+                        g.dx = dirs[0].x;
+                        g.dy = dirs[0].y;
                     }
                 }
 
                 // Collision
-                const dist = Math.hypot(gh.x - pacman.x, gh.y - pacman.y);
-                if (dist < 0.8) {
-                    if (powerMode) {
-                        score += 200;
-                        gh.x = 9; gh.y = 8;
-                        playTone(600, 0.1, 'triangle');
+                const dist = Math.hypot(g.x - this.pacman.x, g.y - this.pacman.y);
+                if (dist < 0.75) {
+                    if (this.state.power) {
+                        this.state.score += 200;
+                        g.x = CONFIG.GHOST_START[i].x;
+                        g.y = CONFIG.GHOST_START[i].y;
+                        this.audio.play('ghost');
                     } else {
-                        die();
+                        return true; // hit
                     }
                 }
+                return false;
             });
-        }
 
-        function die() {
-            playTone(200, 0.4, 'sawtooth');
-            lives--;
-            updateUI();
-            
-            if (lives <= 0) {
-                gameOver = true;
-                if (score > highScore) {
-                    highScore = score;
-                    localStorage.setItem('pacHi', highScore);
-                }
-                document.getElementById('finalScore').textContent = score;
-                document.getElementById('gameOverModal').style.display = 'flex';
-            } else {
-                pacman.x = 9; pacman.y = 14;
-                pacman.dir = { x: 0, y: 0 };
-                ghosts.forEach((gh, i) => { gh.x = [8,10,8,10][i]; gh.y = [7,7,8,8][i]; });
+            if (gh.some(h => h)) {
+                this.die();
             }
         }
 
-        function draw() {
-            ctx.fillStyle = '#000';
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
+        die() {
+            this.audio.play('die');
+            this.state.lives--;
+            this.updateUI();
+            
+            if (this.state.lives <= 0) {
+                this.state.gameOver = true;
+                if (this.state.score > this.state.highScore) {
+                    this.state.highScore = this.state.score;
+                    localStorage.setItem('pacmanHi', this.state.highScore);
+                }
+                document.getElementById('finalScore').textContent = this.state.score;
+                document.getElementById('modal').classList.add('active');
+            } else {
+                setTimeout(() => {
+                    this.pacman.x = CONFIG.PAC_START.x;
+                    this.pacman.y = CONFIG.PAC_START.y;
+                    this.pacman.dx = 0; this.pacman.dy = 0;
+                    this.ghosts.forEach((g, i) => {
+                        g.x = CONFIG.GHOST_START[i].x;
+                        g.y = CONFIG.GHOST_START[i].y;
+                    });
+                }, 400);
+            }
+        }
 
-            for (let y = 0; y < ROWS; y++) {
-                for (let x = 0; x < COLS; x++) {
-                    const c = grid[y][x];
-                    const px = x * TILE;
-                    const py = y * TILE;
+        draw() {
+            const ctx = this.ctx;
+            const T = CONFIG.TILE;
+
+            // Clear
+            ctx.fillStyle = '#000';
+            ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+
+            // Map
+            for(let y=0; y<CONFIG.ROWS; y++) {
+                for(let x=0; x<CONFIG.COLS; x++) {
+                    const c = this.grid[y][x];
+                    const px = x*T, py = y*T;
                     
                     if (c === 1) {
-                        ctx.fillStyle = '#0a1628';
-                        ctx.fillRect(px, py, TILE, TILE);
-                        ctx.strokeStyle = 'rgba(0,255,255,0.2)';
-                        ctx.strokeRect(px+1, py+1, TILE-2, TILE-2);
+                        ctx.fillStyle = CONFIG.COLORS.WALL;
+                        ctx.fillRect(px, py, T, T);
+                        ctx.strokeStyle = CONFIG.COLORS.WALL_GLOW;
+                        ctx.strokeRect(px+1, py+1, T-2, T-2);
                     } else if (c === 2) {
-                        ctx.fillStyle = '#0ff';
+                        ctx.fillStyle = CONFIG.COLORS.PELLET;
                         ctx.beginPath();
-                        ctx.arc(px + TILE/2, py + TILE/2, 2, 0, Math.PI*2);
+                        ctx.arc(px+T/2, py+T/2, 2.5, 0, Math.PI*2);
                         ctx.fill();
                     } else if (c === 3) {
-                        ctx.fillStyle = '#f0f';
-                        ctx.shadowColor = '#f0f';
-                        ctx.shadowBlur = 8;
+                        ctx.fillStyle = CONFIG.COLORS.POWER;
+                        ctx.shadowColor = CONFIG.COLORS.POWER;
+                        ctx.shadowBlur = 10;
                         ctx.beginPath();
-                        ctx.arc(px + TILE/2, py + TILE/2, 5, 0, Math.PI*2);
+                        ctx.arc(px+T/2, py+T/2, 5, 0, Math.PI*2);
                         ctx.fill();
                         ctx.shadowBlur = 0;
                     }
@@ -425,89 +576,129 @@
             }
 
             // Ghosts
-            ghosts.forEach(gh => {
-                ctx.fillStyle = powerMode ? '#33f' : gh.color;
+            this.ghosts.forEach(g => {
+                ctx.fillStyle = g.scared ? CONFIG.COLORS.SCARED : g.color;
                 ctx.beginPath();
-                ctx.arc(gh.x * TILE + TILE/2, gh.y * TILE + TILE/2 - 2, 8, Math.PI, 0);
-                ctx.lineTo(gh.x * TILE + TILE/2 + 8, gh.y * TILE + TILE/2 + 6);
-                ctx.lineTo(gh.x * TILE + TILE/2 - 8, gh.y * TILE + TILE/2 + 6);
+                const gx = g.x * T + T/2;
+                const gy = g.y * T + T/2;
+                ctx.arc(gx, gy-2, 8, Math.PI, 0);
+                ctx.lineTo(gx+8, gy+7);
+                ctx.lineTo(gx-8, gy+7);
                 ctx.fill();
+                // Eyes
                 ctx.fillStyle = '#fff';
                 ctx.beginPath();
-                ctx.arc(gh.x * TILE + TILE/2 - 3, gh.y * TILE + TILE/2 - 3, 2.5, 0, Math.PI*2);
-                ctx.arc(gh.x * TILE + TILE/2 + 3, gh.y * TILE + TILE/2 - 3, 2.5, 0, Math.PI*2);
+                ctx.arc(gx-3, gy-3, 2.5, 0, Math.PI*2);
+                ctx.arc(gx+3, gy-3, 2.5, 0, Math.PI*2);
                 ctx.fill();
             });
 
             // Pacman
+            const p = this.pacman;
+            const px = p.x * T + T/2;
+            const py = p.y * T + T/2;
+            
             let ang = 0;
-            if (pacman.dir.x > 0) ang = 0;
-            else if (pacman.dir.x < 0) ang = Math.PI;
-            else if (pacman.dir.y > 0) ang = Math.PI/2;
-            else if (pacman.dir.y < 0) ang = -Math.PI/2;
+            if (p.dx > 0) ang = 0;
+            else if (p.dx < 0) ang = Math.PI;
+            else if (p.dy > 0) ang = Math.PI/2;
+            else if (p.dy < 0) ang = -Math.PI/2;
 
             ctx.save();
-            ctx.translate(pacman.x * TILE + TILE/2, pacman.y * TILE + TILE/2);
+            ctx.translate(px, py);
             ctx.rotate(ang);
-            ctx.fillStyle = pacman.dash ? '#fff' : '#ff0';
+            ctx.fillStyle = p.dash ? CONFIG.COLORS.PACMAN_DASH : CONFIG.COLORS.PACMAN;
             ctx.shadowColor = ctx.fillStyle;
-            ctx.shadowBlur = pacman.dash ? 15 : 8;
+            ctx.shadowBlur = p.dash ? 15 : 10;
             ctx.beginPath();
-            ctx.arc(0, 0, 8, 0.2 * Math.PI, 1.8 * Math.PI);
+            ctx.arc(0, 0, 8, 0.2*Math.PI, 1.8*Math.PI);
             ctx.lineTo(0, 0);
             ctx.fill();
             ctx.restore();
         }
 
-        function updateUI() {
-            document.getElementById('score').textContent = 'SCORE: ' + score;
-            document.getElementById('level').textContent = 'LEVEL ' + level;
-            document.getElementById('lives').textContent = '❤'.repeat(lives);
-            document.getElementById('highScore').textContent = 'HIGH: ' + highScore;
+        updateUI() {
+            document.getElementById('scoreNum').textContent = this.state.score;
+            document.getElementById('livesNum').textContent = this.state.lives;
+            document.getElementById('levelNum').textContent = this.state.level;
+            document.getElementById('menuHighScore').textContent = 'REKORD: ' + this.state.highScore;
+
+            const dashEl = document.getElementById('dashInd');
+            if (this.pacman.dashCooldown > 0) dashEl.className = 'stat-dash cooldown';
+            else if (this.pacman.dash) dashEl.className = 'stat-dash active';
+            else dashEl.className = 'stat-dash ready';
         }
 
-        function loop(time) {
-            if (gameOver) return;
+        loop(time) {
+            if (this.state.gameOver) return;
             
-            const delta = Math.min(0.033, (time - lastTime) / 1000);
-            lastTime = time;
+            const dt = Math.min(0.033, (time - this.lastTime) / 1000);
+            this.lastTime = time;
 
-            if (powerMode) {
-                powerTime -= delta;
-                if (powerTime <= 0) powerMode = false;
+            if (this.state.power) {
+                this.state.powerTime -= dt;
+                if (this.state.powerTime <= 0) this.state.power = false;
             }
 
-            if (pacman.dashCooldown > 0) {
-                pacman.dashCooldown -= delta;
+            if (this.pacman.dashCooldown > 0) {
+                this.pacman.dashCooldown -= dt;
             }
 
-            movePacman(delta);
-            moveGhosts(delta);
-            draw();
+            this.movePacman(dt);
+            this.moveGhosts(dt);
+            this.draw();
 
-            requestAnimationFrame(loop);
+            requestAnimationFrame(t => this.loop(t));
         }
+    }
 
-        function startGame() {
-            initAudio();
-            init();
-        }
+    // ==================== INIT ====================
+    document.addEventListener('DOMContentLoaded', () => {
+        // Loading
+        let progress = 0;
+        const fill = document.getElementById('loadFill');
+        const loadInt = setInterval(() => {
+            progress += Math.random()*15+10;
+            if (progress > 100) progress = 100;
+            fill.style.width = progress + '%';
+            if (progress >= 100) {
+                clearInterval(loadInt);
+                setTimeout(() => {
+                    document.getElementById('loading').classList.remove('active');
+                    document.getElementById('menu').classList.add('active');
+                }, 200);
+            }
+        }, 60);
 
-        function restart() {
-            initAudio();
-            init();
-        }
+        // Game
+        const game = new Game();
 
-        document.addEventListener('keydown', e => {
-            initAudio();
-            if (e.key === 'ArrowUp' || e.key === 'w') setDir(0, -1);
-            else if (e.key === 'ArrowDown' || e.key === 's') setDir(0, 1);
-            else if (e.key === 'ArrowLeft' || e.key === 'a') setDir(-1, 0);
-            else if (e.key === 'ArrowRight' || e.key === 'd') setDir(1, 0);
-            else if (e.key === 'Shift') dash();
+        // Start
+        document.getElementById('btnStart').addEventListener('click', () => {
+            game.audio.init();
+            game.start();
+            document.getElementById('menu').classList.remove('active');
+            document.getElementById('game').classList.add('active');
         });
 
-        document.getElementById('highScore').textContent = 'HIGH: ' + highScore;
+        // Restart
+        document.getElementById('btnRestart').addEventListener('click', () => {
+            document.getElementById('modal').classList.remove('active');
+            game.state.score = 0;
+            game.state.lives = 3;
+            game.loadLevel(1);
+        });
+
+        // Download
+        document.getElementById('btnDownload').addEventListener('click', () => {
+            alert('APKni GitHub Releasesdan yuklab oling');
+        });
+    });
+
+    // PWA
+    if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.register('sw.js').catch(() => {});
+    }
     </script>
 </body>
 </html>
